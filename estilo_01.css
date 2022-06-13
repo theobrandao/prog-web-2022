@@ -1,0 +1,63 @@
+.container {
+	margin:0 auto;
+	width:960px;
+}
+
+body {
+	font-family: "Lucida sans unicode", verdana, sans-serif;
+	line-height: 1.6;
+	background: #cc7766 url('noise.png');
+ }
+
+.lugar {
+	border-color: #ccc #999 #999 #ccc;
+	border-style: solid;
+	border-width: 1px;
+	margin-bottom: 20px;
+	padding:10px;	
+	background-color: rgba (210,210,210,0.3);
+}
+
+.lugar h2  {	border-bottom: 1px dashed #5c818;
+				margin:0;
+	
+}
+.lugar a { color: #2c11af;
+			font-weight: bolt;                       
+	
+}
+
+.lugar img {
+	height: 200px;
+	float: left;
+	border: 1px solid black;
+	margin-right: 10px;
+}
+
+.clear {
+	clear: both;
+}
+.notas {
+	background-color: rgba(210, 210, 210, 0.3);
+	padding: 10 px;
+	float: right;
+	width: 260px;
+}
+.notas h3 {
+	font-size:14 px;
+	margin-top: 0;
+	}
+.notas ol{
+	font-size: 12 px;
+}
+
+footer {
+	text-align: center;
+	font-size: 12px;
+	clear: both;
+}
+
+.todoslugares { 
+	float: left;
+	width:660px;
+}
