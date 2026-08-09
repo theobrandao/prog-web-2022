@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            String   @id // MLB..., id Shopee, ASIN
+  source        String // "ml" | "shopee" | "amazon"
+  title         String
+  productUrl    String
+  imageUrl      String
+  imageLocal    String? // /public/img/products/{id}.jpg
+  videoUrl      String? // URL do vídeo do anúncio (mp4 direto ou stream m3u8)
+  videoLocal    String? // /public/vid/products/{id}.mp4 — baixado e normalizado (§7.5)
+  urgency       String? // prazo real visível no anúncio; habilita o gancho de urgência
+  customImage   String? // foto própria enviada pelo operador; prioridade sobre imageLocal
+  currentPrice  Decimal
+  anchorPrice   Decimal?
+  commissionPct Decimal
+  coupon        String?
+  couponHowTo   String? // instrução de resgate
+  priceNote     String? // condição do preço (ex.: "via Pix", "cada, levando 4")
+  sellerName    String? // nome da loja/vendedor (gera "Vendido por X ✅")
+  comment       String? // comentário humano de curadoria; gancho de prioridade máxima
+  shippingNote  String? // ex.: "Frete grátis com Prime"
+  reviews       Int      @default(0)
+  rating        Decimal  @default(0)
+  sellerRep     String   @default("")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  prices        PricePoint[]
+  links         AffiliateLink[]
+  posts         Post[]
+}
+
+model PricePoint {
+  id        Int      @id @default(autoincrement())
+  productId String
+  date      DateTime // dia truncado em America/Sao_Paulo
+  price     Decimal
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([productId, date])
+}
+
+model AffiliateLink {
+  id        Int     @id @default(autoincrement())
+  productId String
+  channel   String // "grp" | "cnl" | "ig" | "site"
+  url       String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, channel])
+}
+
+model Rule {
+  id               Int     @id @default(1)
+  minCommissionR   Decimal @default(5)
+  minCommissionPct Decimal @default(8)
+  minPrice         Decimal @default(25)
+  maxPrice         Decimal @default(2000)
+  minReviews       Int     @default(50)
+  minRating        Decimal @default(4.5)
+  highTicket       Decimal @default(300)
+  slotsPerDay      Int     @default(3)
+  blocklist        String  @default("réplica,replica,similar,inspirado,estilo,genérico")
+}
+
+model Post {
+  id          Int      @id @default(autoincrement())
+  productId   String
+  date        DateTime
+  slot        Int
+  hook        String // gancho escolhido (§5.6) — persistido para auditoria
+  caption     String
+  waMessage   String
+  tgMessage   String
+  feedImage   String?
+  storyImage  String?
+  igFeedId    String?
+  igStoryId   String?
+  tgSent      Boolean  @default(false)
+  waForwarded Boolean  @default(false)
+  product     Product  @relation(fields: [productId], references: [id])
+  clicks      ClickEvent[]
+}
+
+model ClickEvent {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  src       String   @default("direct") // grp | cnl | ig | site | direct
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model MetricEntry {
+  id      Int      @id @default(autoincrement())
+  date    DateTime
+  source  String
+  channel String
+  clicks  Int     @default(0)
+  sales   Int     @default(0)
+  revenue Decimal @default(0)
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  passwordHash String // argon2id
+  role         String    @default("operador") // "admin" | "operador"
+  status       String    @default("pendente") // "pendente" | "aprovado" | "reprovado" | "bloqueado"
+  createdAt    DateTime  @default(now())
+  approvedAt   DateTime?
+  approvedById Int? // admin que aprovou/reprovou
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String // "user.approve" | "user.create" | "rule.update" | ...
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model Job {
+  id        Int       @id @default(autoincrement())
+  type      String
+  status    String    @default("pending")
+  payload   String    @default("{}")
+  log       String    @default("")
+  runDate   DateTime? // idempotência por dia (type+runDate únicos)
+  createdAt DateTime  @default(now())
+
+  @@unique([type, runDate])
+}

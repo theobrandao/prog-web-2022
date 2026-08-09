@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /ofertas
+Allow: /oferta/
+Disallow: /hoje
+Disallow: /produtos
+Disallow: /importar
+Disallow: /links
+Disallow: /regras
+Disallow: /relatorios
+Disallow: /config
+Disallow: /usuarios
+Disallow: /criativos
+Disallow: /publicacoes
+Disallow: /whatsapp
+Disallow: /api/

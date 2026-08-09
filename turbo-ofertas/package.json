@@ -1,0 +1,49 @@
+{
+  "name": "turbo-ofertas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "worker": "node --env-file=.env --import tsx worker.ts",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "seed": "node --env-file=.env --import tsx prisma/seed.ts",
+    "template": "node --import tsx scripts/gen-template.ts",
+    "backup": "node --import tsx scripts/backup.ts"
+  },
+  "prisma": {
+    "seed": "node --env-file=.env --import tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "argon2": "^0.41.1",
+    "decimal.js": "^10.6.0",
+    "exceljs": "^4.4.0",
+    "luxon": "^3.7.2",
+    "next": "^15.1.4",
+    "node-cron": "^3.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "satori": "^0.12.1",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.4",
+    "@types/node": "^22.20.1",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19.0.5",
+    "@types/react-dom": "^19.0.3",
+    "prisma": "^6.2.1",
+    "tsx": "^4.23.11",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

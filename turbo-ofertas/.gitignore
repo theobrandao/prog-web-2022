@@ -1,0 +1,26 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# env
+.env
+.env.local
+.env.*.local
+
+# database (persistent volume in prod)
+data/*.db
+data/*.db-journal
+
+# generated media
+public/img/products/*
+public/vid/products/*
+public/img/creatives/*
+!public/img/products/.gitkeep
+!public/vid/products/.gitkeep
+!public/img/creatives/.gitkeep
+
+# prisma
+prisma/migrations/dev.db*
