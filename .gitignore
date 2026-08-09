@@ -19,3 +19,6 @@ ruvector.db-*
 
 # Regenerable npm lockfile (plugins reproduced from package.json + installed.json)
 .claude-flow/plugins/package-lock.json
+
+# Ruflo daemon runtime pid
+.claude-flow/daemon.pid
