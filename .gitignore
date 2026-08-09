@@ -16,3 +16,6 @@ ruvector.db-*
 .swarm/
 .claude-flow/daemon-state.json
 .claude-flow/metrics/
+
+# Regenerable npm lockfile (plugins reproduced from package.json + installed.json)
+.claude-flow/plugins/package-lock.json
