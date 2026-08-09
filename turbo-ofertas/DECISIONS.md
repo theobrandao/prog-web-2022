@@ -17,6 +17,12 @@ especificação, escolhendo a opção mais simples que respeita R1–R6.
 | D10 | `.env` carregado via `node --env-file=.env` (Node 22 nativo) nos scripts seed/worker | Evita dependência `dotenv`; o Next carrega `.env` sozinho | `dotenv` |
 | D11 | Faixa de preço padrão mantém `maxPrice=2000`; TV do seed ajustada para R$1.799 | Demonstra `vaga1[alto]` respeitando a regra em vez de afrouxá-la (R5) | Aumentar maxPrice para "encaixar" o produto |
 | D12 | Canal `site` incluído nos links do seed | Necessário para a página `/oferta/{id}` e roteamento Amazon (R2), sem gerar link ML por software (R1) | — |
+| D13 | Fontes do spec (Archivo/IBM Plex) baixadas para `assets/fonts` (satori exige TTF embutido) | Fidelidade visual ao §7; satori não usa Google Fonts em runtime | Substituir por fonte de sistema (Liberation) |
+| D14 | Tracking de clique via **redirect** (`/api/track/{id}?src=`) em vez de só beacon POST | Mede o clique mesmo sem JS e permite trocar o link depois consertando todas as mensagens já enviadas (§4.9) | Beacon POST puro (perde clique sem JS) |
+| D15 | Integrações externas em **dry-run** quando falta o segredo (logam a chamada) | Item 3 do protocolo: rodar sem credencial sem quebrar o pipeline; `lib/env.dryRun.*` decide | Exigir credencial para qualquer execução |
+| D16 | Jobs de publicação com `type` por vaga (`publishTg1/2/3`) para a unicidade `(type, runDate)` | Permite 3 publicações/dia idempotentes sem colidir no mesmo dia (§9) | Um único type por dia (impediria as 3 janelas) |
+| D17 | Imagens do seed via `picsum.photos` caem para criativo tipográfico (403 no proxy) | O fallback do §7.4 é exatamente esse caminho; pipeline nunca quebra por imagem | Falhar a geração quando a imagem não baixa |
+| D18 | Middleware faz checagem leve (presença/exp, sem verificar HMAC — runtime Edge); enforcement real de assinatura+papel nos route handlers/páginas (runtime Node) | `node:crypto` não existe no Edge; segurança real fica no servidor via `getSession()` | Verificar HMAC no middleware (quebra no Edge) |
 
 ## Restrições R1–R6 — como o código as impõe (não só documenta)
 

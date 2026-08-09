@@ -115,6 +115,14 @@ A assinatura do header é `SHA256(AppId+Timestamp+Payload+Secret)` — confira o
 npm run backup   # gera backups/turbo-ofertas-AAAAMMDD-HHmm.tar.gz (data/ + public/img + public/vid)
 ```
 
+## Pipeline diário, criativos e tracking (Fase 3)
+
+- **Rodar agora:** em `/hoje`, botão **Rodar seleção** executa `selectDaily → makeCreatives → waPackage`. Idempotente por dia — reexecutar não duplica posts.
+- **Criativos:** `satori + sharp` geram feed 1080×1080 e story 1080×1920 (§7), com as fontes do spec embutidas em `assets/fonts`. Sem imagem local, cai para o criativo tipográfico (§7.4) — o pipeline nunca quebra.
+- **Agendador:** `npm run worker` (node-cron, America/Sao_Paulo) nos horários da §9 (06:00 seleção/criativos/pacote, 09:00/12:30/20:00 publicações, dom 08:00 lembrete de links, sex 18:00 relatório).
+- **Dry-run:** sem `TELEGRAM_BOT_TOKEN` / `IG_ACCESS_TOKEN` / `SHOPEE_*`, as integrações **logam a chamada** em vez de executá-la (nada quebra). Assim que as credenciais entrarem no `.env`, passam a publicar de verdade.
+- **Tracking próprio:** a página `/oferta/{postId}?src=grp|cnl|ig|site` e o redirecionador `/api/track/{postId}` gravam `ClickEvent` por canal. **R2**: link Amazon em WhatsApp/Telegram sempre passa por `/oferta/...`, nunca cru.
+
 ## Arquitetura (resumo)
 - `src/core/` — **regras de negócio puras** (sem I/O, 100% testáveis): `evaluate`, `select`, `falseDiscount`, `texts`, `hooks`, `blocklist`, `format`, `constants`.
 - `src/services/` — I/O: `importer`/`importRunner`, `selection`, `users`, (fase 3+: `images`, `videos`, `creatives`, `instagram`, `telegram`, `shopee`).

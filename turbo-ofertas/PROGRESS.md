@@ -2,51 +2,56 @@
 
 > Atualizado continuamente conforme item 5 do PROTOCOLO DE EXECUÇÃO.
 
-## Fase atual: **1 → 2 concluídas (núcleo testado); 3–6 pendentes**
+## Estado: **Fases 1–3 completas e funcionando; 4/5/6 em modo dry-run (aguardando credenciais)**
+
+Tudo verificável localmente: `npm test` (76 testes verdes), `npx next build` limpo (type-check total, sem workarounds), pipeline diário rodado ponta a ponta gerando Posts + criativos PNG reais.
 
 ### ✅ Fase 1 — Esqueleto, Prisma, auth multiusuário, importador, /produtos, /importar
-Checklist de aceite:
-- [x] Estrutura de pastas do §2 e configs (Next, TS, Vitest, Prisma).
-- [x] Schema Prisma completo (§2.2) e DB SQLite criada (`prisma db push`).
-- [x] Auth multiusuário: registro **pendente**, login, papéis admin/operador, `AuditLog`.
-  - Travas: admin não bloqueia/reprova a si mesmo; último admin não é rebaixado/bloqueado; usuário criado pelo admin já entra aprovado. **(6 testes DB verdes)**
-  - Token de sessão HMAC + `argon2id` para senha. **(5 testes verdes)**
-- [x] Importador `.xlsx` (§6): validação linha a linha pura + upsert idempotente.
-  - Linha inválida rejeitada **sem abortar o lote** (R6); tiktok rejeitado (R4); reimportação não duplica `PricePoint`. **(10 + 1 DB testes verdes)**
-- [x] `template-entrada.xlsx` gerado (script `npm run template`); linha-exemplo é ignorada na importação.
-- [ ] Páginas `/produtos` e `/importar` (UI) — **em construção** (camada web).
-- [ ] Download de imagens (`services/images.ts`) — **pendente**.
+- [x] Estrutura §2, configs (Next 15, TS, Vitest, Prisma), schema completo (§2.2), DB SQLite em `data/app.db`.
+- [x] Auth multiusuário: registro pendente, login (cookie HMAC HttpOnly/Secure), papéis admin/operador, `AuditLog`, travas (auto-bloqueio, último admin). **(11 testes)**
+- [x] Importador `.xlsx` (§6): validação pura + upsert idempotente; lote não aborta (R6); tiktok (R4); reimport sem duplicar PricePoint. **(11 testes)**
+- [x] `template-entrada.xlsx` + gerador (`npm run template`); imagens (`services/images.ts`).
+- [x] Páginas `/produtos` e `/importar` + rotas API.
 
 ### ✅ Fase 2 — core completo + /regras + /hoje + seed
-Checklist de aceite:
-- [x] `core/evaluate` (12 checks na ordem do §5.2) — cada check testado isolado; ML sem link; amazon dispensado; em observação <14d. **(16 testes)**
-- [x] `core/select` (§5.3) — ticket alto na vaga 1; cota incompleta (R5); desempate; não repetir produto de 7 dias. **(8 testes)**
-- [x] `core/falseDiscount` (§5.4) — pico inflado→true; queda legítima→false; histórico curto→false. **(4 testes)**
-- [x] `core/texts` (§5.5) — âncora/sem âncora/cupom/frete; sem linha oca; rodapé de convite sempre; **R2** (Amazon → `/oferta/`, sem `amzn.to|amazon.com`). **(11 testes)**
-- [x] `core/hooks` (§5.6) — comentário humano; urgência só com campo; BAIXOU; teto R$2.669→"POR MENOS DE R$ 3.000"; comparação histórica; kit unitário; rotação determinística. **(9 testes)**
-- [x] `core/blocklist` — normalização acento/caixa. **(2 testes)**
-- [x] `seed.ts` — Rule padrão + admin bootstrap + 12 produtos com 20 dias de histórico.
-- [x] Seed **demonstra /hoje**: 3 selecionados (`vaga1[alto]` TV R$1.799, +2 baixo), 2 aprovados sem vaga, 7 barrados cobrindo cada motivo, 1 ML pendente de link.
-- [ ] Páginas `/regras` e `/hoje` (UI) — **em construção** (camada web).
+- [x] `evaluate` (12 checks §5.2), `select` (§5.3, R5, no-repeat 7d), `falseDiscount` (§5.4), `texts` (§5.5, **R2**), `hooks` (§5.6), `blocklist`. **(39 testes)**
+- [x] Seed: Rule + admin + 12 produtos/20 dias → `/hoje` mostra `vaga1[alto]` (TV R$1.799) + 2, 2 aprovados sem vaga, 7 barrados (cada motivo), 1 ML pendente de link.
+- [x] Páginas `/hoje` (KPIs, slots, barrados com motivo, pendentes) e `/regras` (prévia ao vivo) + rotas.
 
-**Testes: 72/72 verdes** (`npm test`). Ver `tests/`.
+### ✅ Fase 3 — Criativos + /ofertas + /oferta + Telegram
+- [x] **Criativos reais** satori+sharp (§7): feed 1080×1080 e story 1080×1920; fontes do spec embutidas (Archivo/IBM Plex em `assets/fonts`); fallback tipográfico (§7.4). PNGs gerados para os posts do seed.
+- [x] Jobs: `selectDaily` (seleção → Posts com hook/caption/waMessage/tgMessage → enfileira criativos), `makeCreatives`, `publishTg`, `publishIg`, `waPackage`, `weeklyReport`; `runner.withJob` com idempotência por dia (§9). **(2 testes)**
+- [x] `worker.ts` — node-cron nos horários da §9 (America/Sao_Paulo).
+- [x] Telegram (`sendPhoto`/`sendMessage`/`sendVideo`, cap 1024) em **dry-run** sem token; caption trunca título, nunca o link (§8.2).
+- [x] Público: `/ofertas` (grid 7d) e **`/oferta/{postId}`** (criativo, preço, cupom, CTA) com **tracking de clique próprio** por canal (`/api/track/{id}?src=`) gravando `ClickEvent`; **R2**: Amazon roteia por aqui.
+- [x] Botão **Rodar seleção** executa o pipeline real (selectDaily→makeCreatives→waPackage).
 
-### ⏳ Camada web (Next.js) — em construção
-API routes + páginas (login, hoje, produtos, importar, regras, usuarios) + middleware de auth.
-Serviço `selection.ts` (DB→core, `computeToday`) pronto e verificado com o seed.
+### 🟡 Fase 4 — Instagram (código pronto, dry-run)
+- [x] `services/instagram.ts`: criar container → poll status → publish (feed/story §8.1); `testConnection` para /config.
+- [ ] Publicação real: precisa `IG_USER_ID`, `IG_ACCESS_TOKEN`, `PUBLIC_BASE_URL` HTTPS (deploy antes). Sem eles, `publishIg` loga em dry-run.
 
-### ⛔ Fases 3–6 — não iniciadas
-- Fase 3: criativos (satori+sharp), `/ofertas`, Telegram (canal + pacote privado). **Precisa:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`, `TELEGRAM_PRIVATE_CHAT_ID`, `GROUP_INVITE_URL`.
-- Fase 4: Instagram feed+story, `/config`. **Precisa:** `IG_USER_ID`, `IG_ACCESS_TOKEN`, `PUBLIC_BASE_URL` HTTPS (deploy antes).
-- Fase 5: `/relatorios`, cron (`worker.ts`), weeklyReport, backup (script já existe).
-- Fase 6: Shopee API. **Precisa:** `SHOPEE_APP_ID`, `SHOPEE_SECRET`.
+### 🟡 Fase 5 — Relatórios + cron + weekly (parcial)
+- [x] Cron completo (`worker.ts`), `weeklyReport` (dry-run), `backup` (`npm run backup`).
+- [~] `/relatorios` e telas operacionais (`/criativos`, `/publicacoes`, `/whatsapp`, `/links`, `/config`) — **em construção** (camada web, subagente).
 
-## Próximos passos
-1. Concluir a camada web e rodar `npx next build` limpo.
-2. `services/images.ts` (download + resize + strip EXIF) e job de download na importação.
-3. Fase 3: criativos + Telegram (dry-run enquanto não houver credencial).
+### 🟡 Fase 6 — Shopee (assinatura pronta, dry-run)
+- [x] `services/shopee.ts`: `sign()` SHA256(AppId+Timestamp+Payload+Secret) com **teste de vetor conhecido**; `productOfferV2`, `generateShortLink`, `testConnection` em dry-run.
+- [ ] Coleta/shortlink reais: precisa `SHOPEE_APP_ID`, `SHOPEE_SECRET`.
 
-## Credenciais que preciso de você (com instrução no README)
-- **Fase 3:** `TELEGRAM_BOT_TOKEN` (via @BotFather), `TELEGRAM_CHANNEL_ID`, `TELEGRAM_PRIVATE_CHAT_ID`, `GROUP_INVITE_URL`.
-- **Fase 4:** `IG_USER_ID`, `IG_ACCESS_TOKEN` (app Meta + token longa duração), `PUBLIC_BASE_URL` HTTPS.
-- **Fase 6:** `SHOPEE_APP_ID`, `SHOPEE_SECRET`.
+## Testes: 76/76 verdes
+core (evaluate/select/falseDiscount/texts/hooks/blocklist), importer (+DB idempotência), auth+users (DB), jobs (idempotência), shopee (vetor).
+
+## Como demonstrar
+```
+npm install && npm run db:push && npm run seed
+npm run dev        # login admin, /hoje já populado; clique "Rodar seleção" → veja /criativos
+npm run worker     # agendador (dry-run sem credenciais)
+npm test
+```
+
+## Credenciais pendentes (habilitam publicação real; até lá, dry-run)
+- **Fase 3/4 Telegram/IG:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`, `TELEGRAM_PRIVATE_CHAT_ID`, `GROUP_INVITE_URL`, `IG_USER_ID`, `IG_ACCESS_TOKEN`, `PUBLIC_BASE_URL`.
+- **Fase 6 Shopee:** `SHOPEE_APP_ID`, `SHOPEE_SECRET`.
+
+## Observação de entrega
+Push para o GitHub está bloqueado neste ambiente (GitHub App somente-leitura). O projeto é entregue por bundle/tarball; ver mensagem do assistente.
