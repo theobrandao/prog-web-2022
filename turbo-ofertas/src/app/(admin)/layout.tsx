@@ -16,9 +16,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const isAdmin = session.role === "admin";
 
   return (
-    <div>
-      <header className="site-header">
-        <span className="brand">TURBO OFERTAS</span>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <span className="brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/brand/logo.png" alt="Ofertas Turbo BR" width={36} height={36} />
+          OFERTAS TURBO BR
+        </span>
         <nav>
           <Link href="/">Início</Link>
           <Link href="/hoje">Hoje</Link>
@@ -50,8 +54,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </span>
           <LogoutButton />
         </div>
-      </header>
-      <main className="container">{children}</main>
+      </aside>
+      <main className="content">{children}</main>
     </div>
   );
 }
