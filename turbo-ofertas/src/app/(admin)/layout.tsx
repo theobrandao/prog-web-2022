@@ -20,16 +20,24 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <header className="site-header">
         <span className="brand">TURBO OFERTAS</span>
         <nav>
+          <Link href="/">Início</Link>
           <Link href="/hoje">Hoje</Link>
           <Link href="/produtos">Produtos</Link>
+          <Link href="/midia">Mídia</Link>
           <Link href="/importar">Importar</Link>
           <Link href="/links">Links</Link>
           <Link href="/regras">Regras</Link>
           <Link href="/criativos">Criativos</Link>
           <Link href="/publicacoes">Publicações</Link>
+          <Link href="/jobs">Jobs</Link>
           <Link href="/whatsapp">WhatsApp</Link>
+          <Link href="/tracking">Tracking</Link>
           <Link href="/relatorios">Relatórios</Link>
+          <Link href="/alertas">Alertas</Link>
+          <Link href="/health">Health</Link>
           {isAdmin && <Link href="/config">Config</Link>}
+          {isAdmin && <Link href="/config-avancada">Config Avançada</Link>}
+          {isAdmin && <Link href="/auditoria">Auditoria</Link>}
           {isAdmin && <Link href="/usuarios">Usuários</Link>}
         </nav>
         <div className="user-box">

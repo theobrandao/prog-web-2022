@@ -157,6 +157,32 @@ main.container {
   color: var(--ink);
 }
 
+.badge.ok {
+  background: var(--ok);
+  color: var(--paper);
+}
+.badge.danger {
+  background: var(--danger);
+  color: var(--paper);
+}
+.badge.muted {
+  background: var(--muted);
+  color: var(--paper);
+}
+
+.bar-track {
+  background: var(--border);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+  min-width: 120px;
+}
+
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+}
+
 .badge.ml {
   background: #fff159;
   color: #2d3277;
