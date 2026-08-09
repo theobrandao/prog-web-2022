@@ -391,3 +391,65 @@ details summary {
   font-size: 0.8rem;
   padding: 2rem 1rem;
 }
+
+/* ---------- Calendário ---------- */
+.btn.small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.cal-head {
+  margin-bottom: 0.5rem;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  padding: 0.25rem 0;
+}
+
+.cal-cell {
+  min-height: 90px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cal-empty {
+  border: none;
+  background: transparent;
+  min-height: 0;
+}
+
+.cal-today {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.cal-daynum {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cal-count {
+  align-self: flex-start;
+}
+
+.cal-campaign {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -143,3 +143,28 @@ model Job {
 
   @@unique([type, runDate])
 }
+
+model Campaign {
+  id         Int      @id @default(autoincrement())
+  name       String
+  startDate  DateTime
+  endDate    DateTime
+  channels   String   @default("") // "ig,tg,site,grp,cnl" (csv)
+  productIds String   @default("") // ids de produtos alvo (csv)
+  status     String   @default("planejada") // "planejada" | "ativa" | "encerrada"
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+}
+
+model AbTest {
+  id        Int      @id @default(autoincrement())
+  name      String
+  kind      String   @default("hook") // "hook" | "creative" | "horario"
+  variantA  String   @default("")
+  variantB  String   @default("")
+  status    String   @default("planejado") // "planejado" | "ativo" | "encerrado"
+  winner    String   @default("") // "" | "A" | "B"
+  startDate DateTime @default(now())
+  note      String   @default("")
+  createdAt DateTime @default(now())
+}

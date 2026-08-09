@@ -31,8 +31,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/publicacoes">Publicações</Link>
           <Link href="/jobs">Jobs</Link>
           <Link href="/whatsapp">WhatsApp</Link>
+          <Link href="/campanhas">Campanhas</Link>
+          <Link href="/calendario">Calendário</Link>
           <Link href="/tracking">Tracking</Link>
           <Link href="/relatorios">Relatórios</Link>
+          <Link href="/ab">Testes A/B</Link>
           <Link href="/alertas">Alertas</Link>
           <Link href="/health">Health</Link>
           {isAdmin && <Link href="/config">Config</Link>}
