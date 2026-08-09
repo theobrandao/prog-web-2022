@@ -7,7 +7,7 @@ services:
     plan: starter # necessário para disco persistente
     # --include=dev garante prisma/tsx/typescript no build e no runtime (db push + init)
     buildCommand: npm install --include=dev && npm run build
-    startCommand: npx prisma db push --skip-generate && node --import tsx scripts/ensure-admin.ts && npm run start
+    startCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts && npm run start
     healthCheckPath: /ofertas
     envVars:
       - key: NODE_VERSION
