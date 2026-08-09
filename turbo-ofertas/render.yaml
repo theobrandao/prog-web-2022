@@ -4,10 +4,11 @@ services:
   - type: web
     name: turbo-ofertas
     runtime: node
-    plan: starter # necessário para disco persistente
-    # --include=dev garante prisma/tsx/typescript no build e no runtime (db push + init)
+    plan: starter # necessário para disco persistente e preDeploy
     buildCommand: npm install --include=dev && npm run build
-    startCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts && npm run start
+    # migrações + bootstrap do admin rodam ANTES de subir o servidor (não atrasam o health check)
+    preDeployCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts
+    startCommand: npm run start
     healthCheckPath: /ofertas
     envVars:
       - key: NODE_VERSION
