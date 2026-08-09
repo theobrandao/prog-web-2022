@@ -1,35 +1,27 @@
-# Render Blueprint (deploy a partir de um repo GitHub). Web + cron no mesmo serviço,
-# com disco persistente para SQLite e mídia. No Railway, o Dockerfile é detectado
-# automaticamente — ver README para o fluxo via CLI (sem GitHub).
+# Render Blueprint — Turbo Ofertas
+# Um serviço web (Next.js) com disco persistente para o SQLite.
 services:
   - type: web
     name: turbo-ofertas
-    runtime: docker
-    plan: starter
+    runtime: node
+    plan: starter # necessário para disco persistente
+    # --include=dev garante prisma/tsx/typescript no build e no runtime (db push + init)
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npx prisma db push --skip-generate && node --import tsx scripts/ensure-admin.ts && npm run start
     healthCheckPath: /ofertas
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
     envVars:
+      - key: NODE_VERSION
+        value: "22"
       - key: DATABASE_URL
-        value: file:/data/app.db
-      - key: DATA_DIR
-        value: /data
-      - key: NODE_ENV
-        value: production
-      - key: RUN_WORKER
-        value: "1"
-      - key: SEED_ON_START
-        value: "0" # coloque 1 no PRIMEIRO deploy para popular o demo, depois volte a 0
+        value: file:/data/app.db # aponta para o disco persistente
       - key: SESSION_SECRET
-        generateValue: true
+        generateValue: true # o Render gera uma chave forte automaticamente
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
       - key: PUBLIC_BASE_URL
-        sync: false # ex.: https://turbo-ofertas.onrender.com (necessário p/ Instagram)
+        sync: false # preencher com a URL do Render após o 1º deploy (habilita o Instagram)
       - key: GROUP_INVITE_URL
         sync: false
       - key: TELEGRAM_BOT_TOKEN
@@ -46,3 +38,7 @@ services:
         sync: false
       - key: SHOPEE_SECRET
         sync: false
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
