@@ -1,0 +1,48 @@
+# Render Blueprint (deploy a partir de um repo GitHub). Web + cron no mesmo serviço,
+# com disco persistente para SQLite e mídia. No Railway, o Dockerfile é detectado
+# automaticamente — ver README para o fluxo via CLI (sem GitHub).
+services:
+  - type: web
+    name: turbo-ofertas
+    runtime: docker
+    plan: starter
+    healthCheckPath: /ofertas
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: file:/data/app.db
+      - key: DATA_DIR
+        value: /data
+      - key: NODE_ENV
+        value: production
+      - key: RUN_WORKER
+        value: "1"
+      - key: SEED_ON_START
+        value: "0" # coloque 1 no PRIMEIRO deploy para popular o demo, depois volte a 0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false # ex.: https://turbo-ofertas.onrender.com (necessário p/ Instagram)
+      - key: GROUP_INVITE_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHANNEL_ID
+        sync: false
+      - key: TELEGRAM_PRIVATE_CHAT_ID
+        sync: false
+      - key: IG_USER_ID
+        sync: false
+      - key: IG_ACCESS_TOKEN
+        sync: false
+      - key: SHOPEE_APP_ID
+        sync: false
+      - key: SHOPEE_SECRET
+        sync: false

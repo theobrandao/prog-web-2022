@@ -102,13 +102,41 @@ Telegram privado **10 dias antes** do vencimento (job semanal).
 No Painel de Afiliados Shopee, crie um app e copie `SHOPEE_APP_ID` / `SHOPEE_SECRET`.
 A assinatura do header é `SHA256(AppId+Timestamp+Payload+Secret)` — confira o formato exato na doc oficial do painel.
 
-## Deploy (Railway / Render)
-1. Dois serviços do mesmo repo: **web** (`npm run build && npm start`) e **worker** (`npm run worker`).
-2. **Volume persistente** montado em `/data` (SQLite) e em `/public/img` (mídia baixada).
-3. Configure as variáveis da tabela acima.
-4. Build roda `prisma generate` + `next build`; em produção use `npm run prisma:deploy` (`prisma migrate deploy`). O `seed` é só para dev/demonstração.
-5. Aponte `PUBLIC_BASE_URL` para a URL HTTPS gerada (necessária para a Graph API na fase 4).
-6. Instale `ffmpeg` no container (normalização de vídeo, §7.5).
+## Deploy
+
+O projeto inclui um **`Dockerfile`** (web + worker/cron no mesmo container, compartilhando o
+volume SQLite) e um **`start.sh`** que, no boot: aponta `public/img/{products,creatives}` e
+`public/vid/products` para o volume (persistência de mídia), roda `prisma db push` no banco do
+volume, opcionalmente popula o demo (`SEED_ON_START=1`) e sobe o `next start` (+ cron se `RUN_WORKER=1`).
+
+**Variáveis de produção** (além das da tabela acima):
+| Variável | Valor |
+|---|---|
+| `DATABASE_URL` | `file:/data/app.db` (caminho absoluto no volume) |
+| `DATA_DIR` | `/data` |
+| `PUBLIC_BASE_URL` | a URL HTTPS pública gerada (necessária para o Instagram) |
+| `SEED_ON_START` | `1` só no primeiro deploy (depois `0`) |
+| `RUN_WORKER` | `1` para rodar o cron junto (padrão) |
+
+### Railway (sem precisar do GitHub — sobe da sua pasta)
+```bash
+npm i -g @railway/cli
+railway login
+railway init
+railway volume add --mount-path /data     # volume persistente p/ DB + mídia
+railway up                                 # detecta o Dockerfile e faz o deploy
+```
+Depois, em **Variables**, defina as da tabela acima (`DATABASE_URL=file:/data/app.db`, etc.) e,
+em **Settings → Networking**, gere o domínio; copie-o para `PUBLIC_BASE_URL` e faça um redeploy.
+
+### Render (via repositório GitHub)
+O repo traz um **`render.yaml`** (Blueprint): em *New → Blueprint*, aponte para o repo e o Render
+cria o serviço web com disco em `/data`. Preencha as variáveis marcadas `sync:false`.
+
+### Notas
+- `ffmpeg` já vem instalado na imagem (normalização de vídeo, §7.5).
+- SQLite = **1 instância**. Para escalar horizontalmente, migrar o `datasource` do Prisma para Postgres.
+- Migrações: a imagem usa `prisma db push`; se preferir migrações versionadas, troque por `prisma migrate deploy` no `start.sh`.
 
 ## Backup
 ```bash
