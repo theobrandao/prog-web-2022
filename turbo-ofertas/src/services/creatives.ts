@@ -27,11 +27,30 @@ async function loadFonts() {
   return fontCache;
 }
 
+const LOGO_PATH = path.join(process.cwd(), "public", "img", "brand", "logo.png");
+let logoCache: string | null | undefined;
+
+async function loadLogo(): Promise<string | null> {
+  if (logoCache !== undefined) return logoCache;
+  try {
+    const buf = await readFile(LOGO_PATH);
+    logoCache = `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    logoCache = null;
+  }
+  return logoCache;
+}
+
 /** Minimal hyperscript so we can build satori vnodes without JSX in a .ts file. */
 type Style = Record<string, unknown>;
 type Node = { type: string; props: { style?: Style; children?: unknown } };
 function el(type: string, style: Style, children?: unknown): Node {
   return { type, props: { style, children } };
+}
+
+/** satori image vnode: src/width/height are PROPS, not style. */
+function imgNode(src: string, width: number, height: number, style: Style = {}): unknown {
+  return { type: "img", props: { src, width, height, style } };
 }
 
 export interface CreativeInput {
@@ -103,6 +122,7 @@ function priceBlock(input: CreativeInput, priceSize: number): Node {
 export async function renderFeed(input: CreativeInput): Promise<Buffer> {
   const dataUri = input.imagePath ? await imageDataUri(input.imagePath) : null;
   const fontsData = await loadFonts();
+  const logo = await loadLogo();
 
   const photoArea = dataUri
     ? el("div", {
@@ -114,7 +134,7 @@ export async function renderFeed(input: CreativeInput): Promise<Buffer> {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-      }, el("img", { src: dataUri, width: 1000, height: 620, style: { objectFit: "contain" } } as unknown as Style))
+      }, imgNode(dataUri, 1000, 620, { objectFit: "contain" }))
     : null;
 
   const bottom = el(
@@ -168,8 +188,11 @@ export async function renderFeed(input: CreativeInput): Promise<Buffer> {
       ),
       el(
         "div",
-        { fontFamily: fonts.mono, fontSize: 26, color: "#9AA1A7", display: "flex", marginTop: 12, justifyContent: "flex-end" },
-        HANDLE,
+        { display: "flex", marginTop: 12, justifyContent: "space-between", alignItems: "center" },
+        [
+          logo ? imgNode(logo, 64, 64, { borderRadius: 12 }) : el("div", { display: "flex" }, ""),
+          el("div", { fontFamily: fonts.mono, fontSize: 26, color: "#9AA1A7", display: "flex" }, HANDLE),
+        ],
       ),
     ],
   );
@@ -220,6 +243,7 @@ export async function renderFeed(input: CreativeInput): Promise<Buffer> {
 export async function renderStory(input: CreativeInput): Promise<Buffer> {
   const dataUri = input.imagePath ? await imageDataUri(input.imagePath) : null;
   const fontsData = await loadFonts();
+  const logo = await loadLogo();
 
   const root = el(
     "div",
@@ -237,17 +261,21 @@ export async function renderStory(input: CreativeInput): Promise<Buffer> {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          gap: 16,
           fontFamily: fonts.mono,
           fontSize: 30,
           color: colors.paper,
         },
-        HANDLE,
+        [
+          logo ? imgNode(logo, 84, 84, { borderRadius: 14 }) : el("div", { display: "flex" }, ""),
+          el("div", { display: "flex" }, HANDLE),
+        ],
       ),
       dataUri
         ? el(
             "div",
             { position: "absolute", top: 180, left: 60, width: 960, height: 900, display: "flex", alignItems: "center", justifyContent: "center" },
-            el("img", { src: dataUri, width: 960, height: 900, style: { objectFit: "contain" } } as unknown as Style),
+            imgNode(dataUri, 960, 900, { objectFit: "contain" }),
           )
         : el(
             "div",

@@ -17,13 +17,20 @@ export default async function OfertasPage() {
   return (
     <div>
       <header className="site-header">
-        <span className="brand">TURBO OFERTAS</span>
+        <span className="brand" style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/brand/logo.png" alt="Ofertas Turbo BR" width={40} height={40} style={{ borderRadius: 8 }} />
+          OFERTAS TURBO BR
+        </span>
         <nav>
           <span className="muted" style={{ color: "#fff", opacity: 0.7 }}>
             {HANDLE}
           </span>
         </nav>
       </header>
+      <p className="container" style={{ marginTop: "1rem", opacity: 0.85 }}>
+        Só publicamos produto no menor preço dos últimos 90 dias.
+      </p>
 
       <main className="container">
         <h1>Ofertas dos últimos 7 dias</h1>
