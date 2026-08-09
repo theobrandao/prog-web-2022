@@ -20,6 +20,7 @@ interface SeedProduct {
   rating: number;
   sellerRep?: string;
   coupon?: string;
+  couponHowTo?: string;
   sellerName?: string;
   shippingNote?: string;
   urgency?: string;

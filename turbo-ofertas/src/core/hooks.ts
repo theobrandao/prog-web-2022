@@ -99,7 +99,7 @@ export function pickHook(
   }
 
   // 4/5. Rotation (kit uses a rotation hook + unitLine).
-  const rotation = [...BASE_ROTATION];
+  const rotation: string[] = [...BASE_ROTATION];
   if (product.urgency && product.urgency.trim().length > 0) {
     rotation.push(URGENCY_TEMPLATE.replace("{urgency}", product.urgency.trim()));
   }

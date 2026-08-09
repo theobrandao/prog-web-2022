@@ -1,8 +1,14 @@
 import Decimal from "decimal.js";
 import type { PrismaClient } from "@prisma/client";
-import type { CoreProduct, CoreRule, Evaluated, PricePoint } from "../core/types.js";
+import type {
+  CoreProduct,
+  CoreRule,
+  Evaluated,
+  PricePoint,
+  SelectResult,
+} from "../core/types.js";
 import { evaluate } from "../core/evaluate.js";
-import { select, type SelectResult } from "../core/select.js";
+import { select } from "../core/select.js";
 import { daysAgo, truncDay } from "../lib/dates.js";
 import { HISTORY_WINDOW_DAYS, REPUBLISH_COOLDOWN_DAYS } from "../core/constants.js";
 

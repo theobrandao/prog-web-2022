@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateRow, COLUMNS, type RawRow } from "../src/services/importer.js";
 
-function row(overrides: Partial<RawRow> = {}): RawRow {
+function row(overrides: Record<string, string> = {}): RawRow {
   const base: RawRow = {
     fonte: "ml",
     id_item: "MLB123456",
