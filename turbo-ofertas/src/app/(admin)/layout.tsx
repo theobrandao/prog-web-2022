@@ -23,7 +23,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/hoje">Hoje</Link>
           <Link href="/produtos">Produtos</Link>
           <Link href="/importar">Importar</Link>
+          <Link href="/links">Links</Link>
           <Link href="/regras">Regras</Link>
+          <Link href="/criativos">Criativos</Link>
+          <Link href="/publicacoes">Publicações</Link>
+          <Link href="/whatsapp">WhatsApp</Link>
+          <Link href="/relatorios">Relatórios</Link>
+          {isAdmin && <Link href="/config">Config</Link>}
           {isAdmin && <Link href="/usuarios">Usuários</Link>}
         </nav>
         <div className="user-box">
