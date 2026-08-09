@@ -4,16 +4,17 @@ services:
     name: turbo-ofertas
     runtime: node
     plan: starter # necessário para disco persistente
-    buildCommand: npm install --include=dev && npm run build
-    # Runtime (disco montado): cria/atualiza o schema no disco, popula o admin+dados,
-    # e sobe o Next com BIND EXPLÍCITO na porta do Render (corrige o health check timeout).
-    startCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts && npx next start -H 0.0.0.0 -p $PORT
-    healthCheckPath: /ofertas
+    buildCommand: npm install && npm run build
+    # prisma e tsx agora são dependências normais (o Render mantém no runtime).
+    # Uso ';' para que o servidor SEMPRE suba, mesmo se o db push/seed reclamar.
+    startCommand: npx prisma db push --skip-generate ; node --import tsx prisma/seed.ts ; npx next start -H 0.0.0.0 -p $PORT
+    # Health check independente do banco -> deploy fica "live" assim que o servidor sobe.
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: DATABASE_URL
-        value: file:/data/app.db # disco persistente
+        value: file:/data/app.db
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_EMAIL

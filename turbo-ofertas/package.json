@@ -30,10 +30,12 @@
     "luxon": "^3.7.2",
     "next": "^15.1.4",
     "node-cron": "^3.0.3",
+    "prisma": "^6.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "satori": "^0.12.1",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "tsx": "^4.23.11"
   },
   "devDependencies": {
     "@types/luxon": "^3.7.4",
@@ -41,8 +43,6 @@
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19.0.5",
     "@types/react-dom": "^19.0.3",
-    "prisma": "^6.2.1",
-    "tsx": "^4.23.11",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
   }
