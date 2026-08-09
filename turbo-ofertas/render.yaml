@@ -5,11 +5,10 @@ services:
     runtime: node
     plan: starter # necessário para disco persistente
     buildCommand: npm install && npm run build
-    # prisma e tsx agora são dependências normais (o Render mantém no runtime).
-    # Uso ';' para que o servidor SEMPRE suba, mesmo se o db push/seed reclamar.
-    startCommand: npx prisma db push --skip-generate ; node --import tsx prisma/seed.ts ; npx next start -H 0.0.0.0 -p $PORT
-    # Health check independente do banco -> deploy fica "live" assim que o servidor sobe.
-    healthCheckPath: /api/health
+    # prisma e tsx são dependencies (o Render mantém no runtime). 'npx --yes' nunca
+    # abre prompt interativo (era o que travava o deploy por 15 min). '-p $PORT' fixa a porta.
+    startCommand: npx --yes prisma db push --skip-generate && node --import tsx prisma/seed.ts && npx --yes next start -H 0.0.0.0 -p $PORT
+    healthCheckPath: /ofertas
     envVars:
       - key: NODE_VERSION
         value: "22"
