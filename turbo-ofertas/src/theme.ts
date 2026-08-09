@@ -18,6 +18,10 @@ export const fonts = {
 export const HANDLE = "@ofertas.turbobr";
 export const SELO = "MENOR PREÇO 90 DIAS";
 
+/** CTAs fixos dos criativos (§7). */
+export const CTA_FEED = "LINK NA BIO";
+export const CTA_STORY = "TOQUE NO LINK";
+
 /** 5 hashtags for the IG caption (§7.3). */
 export const IG_HASHTAGS = [
   "#ofertas",

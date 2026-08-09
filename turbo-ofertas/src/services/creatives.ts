@@ -3,11 +3,39 @@ import path from "node:path";
 import satori from "satori";
 import sharp from "sharp";
 import Decimal from "decimal.js";
-import { colors, fonts, HANDLE, SELO } from "../theme.js";
+import { colors, fonts, HANDLE, SELO, CTA_FEED, CTA_STORY } from "../theme.js";
 import { formatBRL } from "../core/format.js";
 
 const FONT_DIR = path.join(process.cwd(), "assets", "fonts");
 const CREATIVES_DIR = path.join(process.cwd(), "public", "img", "creatives");
+
+/**
+ * DESIGN PADRÃO — "canal de ofertas" (foto full-bleed + explosão de preço).
+ * Todas as coordenadas ficam aqui, num só lugar, para o agente de criativos
+ * aplicar o mesmo template em todos os posts. Ajuste aqui para recalibrar.
+ */
+const LAYOUT = {
+  feed: {
+    size: 1080,
+    logo: { top: 36, left: 36, box: 96 },          // selo de marca (topo-esquerda)
+    selo: { top: 52, right: 36 },                    // "MENOR PREÇO 90 DIAS" (topo-direita)
+    burst: { size: 430, top: 452, right: 8, rot: -7 }, // explosão de preço (inferior-direita)
+    overlay: { height: 400 },                        // faixa inferior (gradiente)
+    titleSize: 40,
+    titleMaxWidth: 620,
+  },
+  story: {
+    width: 1080,
+    height: 1920,
+    logo: { top: 60, left: 48, box: 110 },
+    selo: { top: 78, right: 48 },
+    burst: { size: 420, top: 700, right: 24, rot: -7 }, // dentro da foto, acima da faixa
+    overlay: { top: 1200, height: 540 },             // faixa inferior deixa espaço p/ link sticker
+    titleSize: 46,
+    titleMaxWidth: 640,
+    stickerHint: { top: 1770 },
+  },
+} as const;
 
 type FontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 let fontCache: { name: string; data: Buffer; weight: FontWeight; style: "normal" }[] | null = null;
@@ -53,6 +81,31 @@ function imgNode(src: string, width: number, height: number, style: Style = {}):
   return { type: "img", props: { src, width, height, style } };
 }
 
+function svgDataUri(svg: string): string {
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+/** Spiky "explosion" star badge as an SVG data URI (yellow fill, dark outline). */
+function starburstUri(size: number, spikes = 16): string {
+  const cx = size / 2;
+  const cy = size / 2;
+  const outer = (size / 2) * 0.97;
+  const inner = outer * 0.8;
+  const pts: string[] = [];
+  const total = spikes * 2;
+  for (let i = 0; i < total; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const ang = (Math.PI / spikes) * i - Math.PI / 2;
+    pts.push(`${(cx + r * Math.cos(ang)).toFixed(1)},${(cy + r * Math.sin(ang)).toFixed(1)}`);
+  }
+  return svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+      `<polygon points="${pts.join(" ")}" fill="${colors.accent}" stroke="${colors.ink}" stroke-width="7" stroke-linejoin="round"/>` +
+      `<polygon points="${pts.join(" ")}" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" transform="scale(0.9) translate(${(size * 0.05).toFixed(1)} ${(size * 0.05).toFixed(1)})"/>` +
+      `</svg>`,
+  );
+}
+
 export interface CreativeInput {
   title: string;
   currentPrice: Decimal;
@@ -62,36 +115,184 @@ export interface CreativeInput {
   imagePath?: string | null;
 }
 
-async function imageDataUri(imagePath: string): Promise<string | null> {
+/** Foto processada para preencher EXATAMENTE w×h (cover), com recorte inteligente. */
+async function coverDataUri(imagePath: string, w: number, h: number): Promise<string | null> {
   try {
-    const buf = await readFile(imagePath);
-    const meta = imagePath.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
-    return `data:${meta};base64,${buf.toString("base64")}`;
+    const src = await readFile(imagePath);
+    const out = await sharp(src)
+      .resize(w, h, { fit: "cover", position: "attention" })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${out.toString("base64")}`;
   } catch {
     return null;
   }
 }
 
-function seloBox(): Node {
+/** Produto "contain" centralizado no topo, sobre um fundo desfocado (para story 9:16). */
+async function blurContainDataUri(imagePath: string, w: number, h: number): Promise<string | null> {
+  try {
+    const src = await readFile(imagePath);
+    const bg = await sharp(src)
+      .resize(w, h, { fit: "cover", position: "attention" })
+      .blur(30)
+      .modulate({ brightness: 0.72 })
+      .toBuffer();
+    const prodBuf = await sharp(src)
+      .resize(Math.round(w * 0.9), Math.round(h * 0.52), { fit: "inside", withoutEnlargement: false })
+      .toBuffer();
+    const meta = await sharp(prodBuf).metadata();
+    const pw = meta.width ?? Math.round(w * 0.9);
+    const left = Math.max(0, Math.round((w - pw) / 2));
+    const top = Math.round(h * 0.1);
+    const out = await sharp(bg)
+      .composite([{ input: prodBuf, top, left }])
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${out.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+function priceParts(price: Decimal): { intg: string; cents: string } {
+  const s = formatBRL(price); // e.g. "2.364,90"
+  const [intg, cents = "00"] = s.split(",");
+  return { intg, cents };
+}
+
+/** Marca (logo em selo branco arredondado). */
+function logoBadge(logo: string | null, box: number): Node {
   return el(
     "div",
     {
-      position: "absolute",
-      top: 40,
-      left: 40,
+      backgroundColor: colors.paper,
+      borderRadius: 20,
+      padding: 10,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+    },
+    logo
+      ? imgNode(logo, box, box, { borderRadius: 12 })
+      : el(
+          "div",
+          {
+            width: box,
+            height: box,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: fonts.display,
+            fontSize: 22,
+            color: colors.ink,
+            textAlign: "center",
+          },
+          "OFERTAS\nTURBO",
+        ),
+  );
+}
+
+/** Selo "MENOR PREÇO 90 DIAS". */
+function seloPill(fontSize = 24): Node {
+  return el(
+    "div",
+    {
       backgroundColor: colors.accent,
       color: colors.ink,
       fontFamily: fonts.mono,
-      fontSize: 26,
-      padding: "12px 18px",
-      borderRadius: 6,
+      fontSize,
+      padding: "10px 18px",
+      borderRadius: 999,
       display: "flex",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
     },
     SELO,
   );
 }
 
-function priceBlock(input: CreativeInput, priceSize: number): Node {
+/** Explosão amarela com o preço, inclinada. */
+function priceBurst(input: CreativeInput, size: number, rot: number): Node {
+  const { intg, cents } = priceParts(input.currentPrice);
+  const len = intg.replace(/\D/g, "").length;
+  // Tamanho do número ajustado ao comprimento (evita estourar a explosão).
+  const big = len <= 2 ? size * 0.36 : len === 3 ? size * 0.3 : len === 4 ? size * 0.235 : size * 0.19;
+  return el(
+    "div",
+    {
+      width: size,
+      height: size,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      transform: `rotate(${rot}deg)`,
+    },
+    [
+      imgNode(starburstUri(size), size, size, { position: "absolute", top: 0, left: 0 }),
+      el(
+        "div",
+        {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size * 0.72,
+          color: colors.ink,
+        },
+        [
+          el(
+            "div",
+            { fontFamily: fonts.display, fontSize: big * 0.32, display: "flex", lineHeight: 1 },
+            "R$",
+          ),
+          el(
+            "div",
+            { display: "flex", alignItems: "flex-start", justifyContent: "center" },
+            [
+              el("div", { fontFamily: fonts.display, fontSize: big, lineHeight: 1, display: "flex" }, intg),
+              el(
+                "div",
+                { fontFamily: fonts.display, fontSize: big * 0.36, marginTop: big * 0.1, marginLeft: 3, display: "flex" },
+                cents,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+/** CTA em pílula amarela com seta. */
+function ctaPill(text: string, arrow: "up" | "right"): Node {
+  const path =
+    arrow === "up"
+      ? "M14 3 L14 25 M14 3 L6 12 M14 3 L22 12"
+      : "M4 14 L24 14 M24 14 L15 6 M24 14 L15 22";
+  const icon = svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="${path}" stroke="${colors.ink}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
+  );
+  return el(
+    "div",
+    {
+      backgroundColor: colors.accent,
+      borderRadius: 999,
+      padding: "12px 22px",
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+    },
+    [
+      el("div", { fontFamily: fonts.display, fontSize: 30, color: colors.ink, display: "flex" }, text),
+      imgNode(icon, 28, 28),
+    ],
+  );
+}
+
+/** Preço "de" riscado + cupom (linha auxiliar da faixa inferior). */
+function subline(input: CreativeInput): Node {
   const children: Node[] = [];
   if (input.anchorPrice) {
     children.push(
@@ -99,99 +300,109 @@ function priceBlock(input: CreativeInput, priceSize: number): Node {
         "div",
         {
           fontFamily: fonts.mono,
-          fontSize: 40,
-          color: "#9AA1A7",
+          fontSize: 30,
+          color: "#C9CED2",
           textDecoration: "line-through",
           display: "flex",
         },
-        `R$ ${formatBRL(input.anchorPrice)}`,
+        `de R$ ${formatBRL(input.anchorPrice)}`,
       ),
     );
   }
-  children.push(
-    el(
-      "div",
-      { fontFamily: fonts.display, fontSize: priceSize, color: colors.accent, display: "flex", lineHeight: 1 },
-      `R$ ${formatBRL(input.currentPrice)}`,
-    ),
-  );
-  return el("div", { display: "flex", flexDirection: "column" }, children);
-}
-
-/** §7.1 — Feed 1080×1080. */
-export async function renderFeed(input: CreativeInput): Promise<Buffer> {
-  const dataUri = input.imagePath ? await imageDataUri(input.imagePath) : null;
-  const fontsData = await loadFonts();
-  const logo = await loadLogo();
-
-  const photoArea = dataUri
-    ? el("div", {
-        position: "absolute",
-        top: 40,
-        left: 40,
-        width: 1000,
-        height: 620,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }, imgNode(dataUri, 1000, 620, { objectFit: "contain" }))
-    : null;
-
-  const bottom = el(
-    "div",
-    {
-      position: "absolute",
-      top: 700,
-      left: 0,
-      width: 1080,
-      height: 380,
-      backgroundColor: colors.ink,
-      display: "flex",
-      flexDirection: "column",
-      padding: "30px 60px",
-    },
-    [
+  if (input.coupon) {
+    children.push(
       el(
         "div",
         {
-          fontFamily: fonts.body,
-          fontSize: 34,
+          backgroundColor: colors.paper,
+          color: colors.ink,
+          fontFamily: fonts.mono,
+          fontSize: 26,
+          padding: "6px 14px",
+          borderRadius: 999,
+          display: "flex",
+        },
+        `CUPOM ${input.coupon}`,
+      ),
+    );
+  }
+  return el("div", { display: "flex", gap: 16, alignItems: "center", minHeight: 2 }, children);
+}
+
+/** §7.1 — Feed 1080×1080 (design padrão canal de ofertas). */
+export async function renderFeed(input: CreativeInput): Promise<Buffer> {
+  const L = LAYOUT.feed;
+  const dataUri = input.imagePath ? await coverDataUri(input.imagePath, L.size, L.size) : null;
+  const fontsData = await loadFonts();
+  const logo = await loadLogo();
+
+  const bg = dataUri
+    ? imgNode(dataUri, L.size, L.size, { position: "absolute", top: 0, left: 0 })
+    : el(
+        "div",
+        {
+          position: "absolute",
+          top: 160,
+          left: 60,
+          width: 960,
+          display: "flex",
+          justifyContent: "center",
+          textAlign: "center",
+          fontFamily: fonts.display,
+          fontSize: 68,
+          color: colors.paper,
+        },
+        input.title,
+      );
+
+  const topGradient = el("div", {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: L.size,
+    height: 220,
+    display: "flex",
+    backgroundImage: "linear-gradient(to bottom, rgba(8,10,12,0.55), rgba(8,10,12,0))",
+  });
+
+  const overlay = el(
+    "div",
+    {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      width: L.size,
+      height: L.overlay.height,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      padding: "0 56px 48px 56px",
+      backgroundImage:
+        "linear-gradient(to top, rgba(8,10,12,0.96) 0%, rgba(8,10,12,0.85) 52%, rgba(8,10,12,0) 100%)",
+    },
+    [
+      subline(input),
+      el(
+        "div",
+        {
+          fontFamily: fonts.display,
+          fontSize: L.titleSize,
           color: colors.paper,
           display: "flex",
-          lineHeight: 1.15,
-          maxHeight: 90,
+          lineHeight: 1.12,
+          maxWidth: L.titleMaxWidth,
+          maxHeight: L.titleSize * 2.4,
           overflow: "hidden",
+          marginTop: 14,
         },
         input.title,
       ),
       el(
         "div",
-        { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 20 },
+        { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20 },
         [
-          priceBlock(input, 110),
-          input.coupon
-            ? el(
-                "div",
-                {
-                  backgroundColor: colors.accent,
-                  color: colors.ink,
-                  fontFamily: fonts.mono,
-                  fontSize: 30,
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  display: "flex",
-                },
-                input.coupon,
-              )
-            : el("div", { display: "flex" }, ""),
-        ],
-      ),
-      el(
-        "div",
-        { display: "flex", marginTop: 12, justifyContent: "space-between", alignItems: "center" },
-        [
-          logo ? imgNode(logo, 64, 64, { borderRadius: 12 }) : el("div", { display: "flex" }, ""),
-          el("div", { fontFamily: fonts.mono, fontSize: 26, color: "#9AA1A7", display: "flex" }, HANDLE),
+          ctaPill(CTA_FEED, "up"),
+          el("div", { fontFamily: fonts.mono, fontSize: 26, color: "#C9CED2", display: "flex" }, HANDLE),
         ],
       ),
     ],
@@ -200,123 +411,133 @@ export async function renderFeed(input: CreativeInput): Promise<Buffer> {
   const root = el(
     "div",
     {
-      width: 1080,
-      height: 1080,
+      width: L.size,
+      height: L.size,
       display: "flex",
       position: "relative",
-      backgroundColor: dataUri ? colors.paper : colors.ink,
+      backgroundColor: colors.ink,
     },
     [
-      photoArea,
-      !dataUri
-        ? el(
-            "div",
-            {
-              position: "absolute",
-              top: 120,
-              left: 60,
-              width: 960,
-              display: "flex",
-              justifyContent: "center",
-              fontFamily: fonts.display,
-              fontSize: 64,
-              color: colors.paper,
-              textAlign: "center",
-            },
-            input.title,
-          )
-        : null,
-      seloBox(),
-      bottom,
+      bg,
+      topGradient,
+      el("div", { position: "absolute", top: L.logo.top, left: L.logo.left, display: "flex" }, logoBadge(logo, L.logo.box)),
+      el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(24)),
+      el(
+        "div",
+        { position: "absolute", top: L.burst.top, right: L.burst.right, display: "flex" },
+        priceBurst(input, L.burst.size, L.burst.rot),
+      ),
+      overlay,
     ].filter(Boolean),
   );
 
-  const svg = await satori(root as unknown as React.ReactNode, {
-    width: 1080,
-    height: 1080,
-    fonts: fontsData,
-  });
+  const svg = await satori(root as unknown as React.ReactNode, { width: L.size, height: L.size, fonts: fontsData });
   return sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 }
 
-/** §7.2 — Story 1080×1920. Bottom area kept clear for the IG link sticker. */
+/** §7.2 — Story 1080×1920 (mesmo design; base livre p/ o link sticker). */
 export async function renderStory(input: CreativeInput): Promise<Buffer> {
-  const dataUri = input.imagePath ? await imageDataUri(input.imagePath) : null;
+  const L = LAYOUT.story;
+  const dataUri = input.imagePath ? await blurContainDataUri(input.imagePath, L.width, L.height) : null;
   const fontsData = await loadFonts();
   const logo = await loadLogo();
 
-  const root = el(
-    "div",
-    { width: 1080, height: 1920, display: "flex", position: "relative", backgroundColor: colors.paper },
-    [
-      el(
+  const bg = dataUri
+    ? imgNode(dataUri, L.width, L.height, { position: "absolute", top: 0, left: 0 })
+    : el(
         "div",
         {
           position: "absolute",
-          top: 0,
-          left: 0,
-          width: 1080,
-          height: 140,
-          backgroundColor: colors.ink,
+          top: 420,
+          left: 60,
+          width: 960,
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          gap: 16,
-          fontFamily: fonts.mono,
-          fontSize: 30,
+          textAlign: "center",
+          fontFamily: fonts.display,
+          fontSize: 78,
           color: colors.paper,
         },
-        [
-          logo ? imgNode(logo, 84, 84, { borderRadius: 14 }) : el("div", { display: "flex" }, ""),
-          el("div", { display: "flex" }, HANDLE),
-        ],
-      ),
-      dataUri
-        ? el(
-            "div",
-            { position: "absolute", top: 180, left: 60, width: 960, height: 900, display: "flex", alignItems: "center", justifyContent: "center" },
-            imgNode(dataUri, 960, 900, { objectFit: "contain" }),
-          )
-        : el(
-            "div",
-            { position: "absolute", top: 300, left: 60, width: 960, display: "flex", justifyContent: "center", fontFamily: fonts.display, fontSize: 72, color: colors.ink, textAlign: "center" },
-            input.title,
-          ),
-      seloBox(),
+        input.title,
+      );
+
+  const topGradient = el("div", {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: L.width,
+    height: 300,
+    display: "flex",
+    backgroundImage: "linear-gradient(to bottom, rgba(8,10,12,0.6), rgba(8,10,12,0))",
+  });
+
+  const overlay = el(
+    "div",
+    {
+      position: "absolute",
+      top: L.overlay.top,
+      left: 0,
+      width: L.width,
+      height: L.overlay.height,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-start",
+      padding: "56px 56px 0 56px",
+      backgroundImage:
+        "linear-gradient(to top, rgba(8,10,12,0.97) 0%, rgba(8,10,12,0.9) 60%, rgba(8,10,12,0) 100%)",
+    },
+    [
+      subline(input),
       el(
         "div",
         {
-          position: "absolute",
-          top: 1120,
-          left: 0,
-          width: 1080,
-          height: 360,
-          backgroundColor: colors.ink,
+          fontFamily: fonts.display,
+          fontSize: L.titleSize,
+          color: colors.paper,
           display: "flex",
-          flexDirection: "column",
-          padding: "36px 60px",
+          lineHeight: 1.12,
+          maxWidth: L.titleMaxWidth,
+          maxHeight: L.titleSize * 2.4,
+          overflow: "hidden",
+          marginTop: 16,
         },
-        [
-          el("div", { fontFamily: fonts.body, fontSize: 38, color: colors.paper, display: "flex", maxHeight: 100, overflow: "hidden" }, input.title),
-          el("div", { marginTop: 20, display: "flex" }, priceBlock(input, 130)),
-        ],
+        input.title,
       ),
+    ],
+  );
+
+  const stickerHint = el(
+    "div",
+    {
+      position: "absolute",
+      top: L.stickerHint.top,
+      left: 0,
+      width: L.width,
+      display: "flex",
+      justifyContent: "center",
+    },
+    ctaPill(CTA_STORY, "up"),
+  );
+
+  const root = el(
+    "div",
+    { width: L.width, height: L.height, display: "flex", position: "relative", backgroundColor: colors.ink },
+    [
+      bg,
+      topGradient,
+      el("div", { position: "absolute", top: L.logo.top, left: L.logo.left, display: "flex" }, logoBadge(logo, L.logo.box)),
+      el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(26)),
       el(
         "div",
-        { position: "absolute", top: 1540, left: 0, width: 1080, display: "flex", flexDirection: "column", alignItems: "center" },
-        [
-          el("div", { fontFamily: fonts.display, fontSize: 40, color: colors.ink, display: "flex" }, "↓"),
-          el("div", { fontFamily: fonts.mono, fontSize: 28, color: colors.ink, display: "flex", marginTop: 8 }, "link aqui"),
-        ],
+        { position: "absolute", top: L.burst.top, right: L.burst.right, display: "flex" },
+        priceBurst(input, L.burst.size, L.burst.rot),
       ),
+      overlay,
+      stickerHint,
     ].filter(Boolean),
   );
 
-  const svg = await satori(root as unknown as React.ReactNode, {
-    width: 1080,
-    height: 1920,
-    fonts: fontsData,
-  });
+  const svg = await satori(root as unknown as React.ReactNode, { width: L.width, height: L.height, fonts: fontsData });
   return sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 }
 
