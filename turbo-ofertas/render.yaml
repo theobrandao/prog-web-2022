@@ -7,7 +7,7 @@ services:
     buildCommand: npm install && npm run build
     # prisma e tsx são dependencies (o Render mantém no runtime). 'npx --yes' nunca
     # abre prompt interativo (era o que travava o deploy por 15 min). '-p $PORT' fixa a porta.
-    startCommand: npx --yes prisma db push --skip-generate && node --import tsx prisma/seed.ts && npx --yes next start -H 0.0.0.0 -p $PORT
+    startCommand: npx --yes prisma db push --skip-generate ; node --import tsx prisma/seed.ts ; node --import tsx scripts/bootstrap-select.ts ; npx --yes next start -H 0.0.0.0 -p $PORT
     healthCheckPath: /ofertas
     envVars:
       - key: NODE_VERSION

@@ -4,6 +4,8 @@ import type { PrismaClient } from "@prisma/client";
 import Decimal from "decimal.js";
 import { makePostCreatives } from "../services/creatives.js";
 import { downloadProductImage } from "../services/images.js";
+import { processProductVideo } from "../services/videos.js";
+import { formatBRL } from "../core/format.js";
 import { truncDay } from "../lib/dates.js";
 import type { JobLogger } from "../lib/log.js";
 
@@ -40,6 +42,20 @@ export async function makeCreatives(
         }
       }
       if (existsSync(local)) imagePath = local;
+    }
+
+    // §7.5 — best-effort video normalization. Failure never breaks creatives.
+    if (p.videoUrl && !p.videoLocal) {
+      const currentPrice = new Decimal(String(p.currentPrice));
+      const res = await processProductVideo(p.id, p.videoUrl, {
+        priceLabel: `R$ ${formatBRL(currentPrice)}`,
+      });
+      if (res.ok) {
+        await prisma.product.update({ where: { id: p.id }, data: { videoLocal: res.videoLocal } });
+        log(`  vídeo normalizado: ${p.id}`);
+      } else {
+        log(`  sem vídeo local (${p.id}): ${res.error} — somente imagem`);
+      }
     }
 
     const { feedImage, storyImage } = await makePostCreatives(post.id, {

@@ -23,7 +23,7 @@ export default async function CriativosPage({
   const posts = await prisma.post.findMany({
     where: { date: day },
     orderBy: { slot: "asc" },
-    include: { product: { select: { title: true } } },
+    include: { product: { select: { title: true, videoLocal: true } } },
   });
 
   return (
@@ -53,6 +53,25 @@ export default async function CriativosPage({
               <h3 style={{ fontSize: "1rem", marginTop: "0.5rem" }}>
                 {p.product.title}
               </h3>
+
+              {p.product.videoLocal && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  <span className="badge">🎬 vídeo</span>
+                  <video
+                    controls
+                    src={p.product.videoLocal}
+                    style={{ width: "100%", borderRadius: 8, marginTop: 4 }}
+                  />
+                  <a
+                    className="btn ghost small"
+                    href={p.product.videoLocal}
+                    download
+                    style={{ marginTop: 4, display: "inline-block" }}
+                  >
+                    Baixar vídeo
+                  </a>
+                </div>
+              )}
 
               <div className="grid cols-2" style={{ marginTop: "0.5rem" }}>
                 <div>

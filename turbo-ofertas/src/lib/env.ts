@@ -6,7 +6,9 @@ export function env(key: string): string | undefined {
 }
 
 export function publicBaseUrl(): string {
-  return env("PUBLIC_BASE_URL") ?? "http://localhost:3000";
+  // Prefer explicit config; otherwise use the URL Render injects automatically,
+  // so the app knows its own public address without manual setup.
+  return env("PUBLIC_BASE_URL") ?? env("RENDER_EXTERNAL_URL") ?? "http://localhost:3000";
 }
 
 export function groupInviteUrl(): string {

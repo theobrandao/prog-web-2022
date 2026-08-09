@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/links">Links</Link>
           <Link href="/regras">Regras</Link>
           <Link href="/criativos">Criativos</Link>
+          <Link href="/copy">Copy IA</Link>
           <Link href="/publicacoes">Publicações</Link>
           <Link href="/jobs">Jobs</Link>
           <Link href="/whatsapp">WhatsApp</Link>
