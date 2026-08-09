@@ -5,14 +5,26 @@ import { daysAgo } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
-export default async function OfertasPage() {
+type OfferPost = Awaited<ReturnType<typeof loadPosts>>[number];
+
+async function loadPosts() {
   const since = daysAgo(7);
-  const posts = await prisma.post.findMany({
+  return prisma.post.findMany({
     where: { date: { gte: since } },
     orderBy: { date: "desc" },
     include: { product: true },
     take: 30,
   });
+}
+
+export default async function OfertasPage() {
+  // Never let a transient DB issue turn the public storefront into a 500.
+  let posts: OfferPost[] = [];
+  try {
+    posts = await loadPosts();
+  } catch {
+    posts = [];
+  }
 
   return (
     <div>

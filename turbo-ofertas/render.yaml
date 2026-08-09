@@ -1,28 +1,27 @@
 # Render Blueprint — Turbo Ofertas
-# Um serviço web (Next.js) com disco persistente para o SQLite.
 services:
   - type: web
     name: turbo-ofertas
     runtime: node
-    plan: starter # necessário para disco persistente e preDeploy
+    plan: starter # necessário para disco persistente
     buildCommand: npm install --include=dev && npm run build
-    # migrações + bootstrap do admin rodam ANTES de subir o servidor (não atrasam o health check)
-    preDeployCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts
-    startCommand: npm run start
+    # Runtime (disco montado): cria/atualiza o schema no disco, popula o admin+dados,
+    # e sobe o Next com BIND EXPLÍCITO na porta do Render (corrige o health check timeout).
+    startCommand: npx prisma db push --skip-generate && node --import tsx prisma/seed.ts && npx next start -H 0.0.0.0 -p $PORT
     healthCheckPath: /ofertas
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: DATABASE_URL
-        value: file:/data/app.db # aponta para o disco persistente
+        value: file:/data/app.db # disco persistente
       - key: SESSION_SECRET
-        generateValue: true # o Render gera uma chave forte automaticamente
+        generateValue: true
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
       - key: PUBLIC_BASE_URL
-        sync: false # preencher com a URL do Render após o 1º deploy (habilita o Instagram)
+        sync: false
       - key: GROUP_INVITE_URL
         sync: false
       - key: TELEGRAM_BOT_TOKEN
