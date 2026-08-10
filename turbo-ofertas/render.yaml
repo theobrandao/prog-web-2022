@@ -3,7 +3,7 @@ services:
   - type: web
     name: turbo-ofertas
     runtime: node
-    plan: starter # necessário para disco persistente
+    plan: standard # 2GB RAM — geração de criativos (sharp/satori) + vídeo sem OOM
     buildCommand: npm install && npm run build
     # prisma e tsx são dependencies (o Render mantém no runtime). 'npx --yes' nunca
     # abre prompt interativo (era o que travava o deploy por 15 min). '-p $PORT' fixa a porta.
@@ -13,9 +13,9 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=460" # GC agressivo abaixo do limite de 512MB do Starter
+        value: "--max-old-space-size=1536" # aproveita os 2GB do plano Standard
       - key: ENABLE_VIDEO
-        value: "0" # vídeo (ffmpeg) desligado por memória; ligue com "1" em plano >=2GB
+        value: "1" # vídeo (ffmpeg) reativado — há RAM sobrando no Standard
       - key: DATABASE_URL
         value: file:/data/app.db
       - key: SESSION_SECRET
