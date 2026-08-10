@@ -122,8 +122,15 @@ export function evaluate(
   if (product.source === "amazon") {
     linkOk = true; // dispensado
   } else if (product.source === "ml") {
-    linkOk = hasChannel(product, "grp") && hasChannel(product, "cnl");
-    if (!linkOk) linkDetail = "ML exige link grp E cnl (gerados no Portal do Afiliado)";
+    // Modo Lançamento: basta o link grp (a publicação já usa grp como fallback do cnl).
+    // Regra rígida: exige grp E cnl (gerados no Portal do Afiliado).
+    if (rule.launchMode) {
+      linkOk = hasChannel(product, "grp");
+      if (!linkOk) linkDetail = "ML exige ao menos link grp (Modo Lançamento)";
+    } else {
+      linkOk = hasChannel(product, "grp") && hasChannel(product, "cnl");
+      if (!linkOk) linkDetail = "ML exige link grp E cnl (gerados no Portal do Afiliado)";
+    }
   } else {
     // shopee (fase 1): link grp na planilha
     linkOk = hasChannel(product, "grp");
