@@ -20,7 +20,8 @@ export default function CollectMediaButton() {
         setMsg(
           `Coletadas ${d.images ?? 0} imagem(ns)` +
             (d.failed ? ` — ${d.failed} falha(s)` : "") +
-            ` de ${d.scanned ?? 0} sem imagem.`,
+            ` de ${d.scanned ?? 0} baixadas.` +
+            (d.failed && d.lastError ? ` Último erro: ${d.lastError}` : ""),
         );
         router.refresh();
       }
