@@ -139,10 +139,13 @@ async function coverDataUri(imagePath: string, w: number, h: number): Promise<st
 async function blurContainDataUri(imagePath: string, w: number, h: number): Promise<string | null> {
   try {
     const src = await readFile(imagePath);
+    // Desfoque em meia resolução (1/4 dos pixels) e depois upscale — mesmo visual,
+    // ~4x menos memória/CPU (importante no Starter 512MB).
     const bg = await sharp(src)
-      .resize(w, h, { fit: "cover", position: "attention" })
-      .blur(30)
+      .resize(Math.round(w / 2), Math.round(h / 2), { fit: "cover", position: "attention" })
+      .blur(16)
       .modulate({ brightness: 0.72 })
+      .resize(w, h)
       .toBuffer();
     const prodBuf = await sharp(src)
       .resize(Math.round(w * 0.9), Math.round(h * 0.52), { fit: "inside", withoutEnlargement: false })
