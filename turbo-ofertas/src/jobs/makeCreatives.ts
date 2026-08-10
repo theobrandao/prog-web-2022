@@ -44,8 +44,10 @@ export async function makeCreatives(
       if (existsSync(local)) imagePath = local;
     }
 
-    // §7.5 — best-effort video normalization. Failure never breaks creatives.
-    if (p.videoUrl && !p.videoLocal) {
+    // §7.5 — normalização de vídeo (ffmpeg) é pesada de memória. Fica DESLIGADA
+    // por padrão para não estourar a RAM (512MB no Starter). Habilite com
+    // ENABLE_VIDEO=1 num plano com mais memória.
+    if (process.env.ENABLE_VIDEO === "1" && p.videoUrl && !p.videoLocal) {
       const currentPrice = new Decimal(String(p.currentPrice));
       const res = await processProductVideo(p.id, p.videoUrl, {
         priceLabel: `R$ ${formatBRL(currentPrice)}`,

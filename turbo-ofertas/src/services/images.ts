@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
-const MAX_SIDE = 1600;
+const MAX_SIDE = 1200;
 const TIMEOUT_MS = 15_000;
 const PRODUCTS_DIR = path.join(process.cwd(), "public", "img", "products");
 
@@ -34,6 +34,8 @@ export async function downloadProductImage(
 ): Promise<ImageResult> {
   // Lazy import so pure/test paths don't require the native module.
   const sharp = (await import("sharp")).default;
+  sharp.cache(false);
+  sharp.concurrency(1);
 
   let lastErr = "";
   for (let attempt = 0; attempt < 3; attempt++) {
