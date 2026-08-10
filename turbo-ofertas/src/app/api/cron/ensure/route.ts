@@ -66,7 +66,8 @@ export async function GET(req: Request) {
   g.__cronArmed = true;
   setInterval(() => void tick(), 60_000);
   info("cron interno armado (self-scheduler, TZ=America/Sao_Paulo)");
-  // bootstrap imediato (idempotente)
-  void runDaily();
+  // bootstrap imediato LEVE: só a seleção (sem criativos pesados no boot, p/ não
+  // arriscar OOM no Starter). Criativos rodam sob demanda ou no tick agendado.
+  void withJob(prisma, "selectDaily", new Date(), (l) => selectDaily(prisma, { log: l }));
   return NextResponse.json({ armed: true });
 }
