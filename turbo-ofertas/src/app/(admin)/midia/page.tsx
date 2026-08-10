@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
+import CollectMediaButton from "./_components/CollectMediaButton";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,11 @@ export default async function MidiaPage({
       <h1>Mídia (imagens e vídeos)</h1>
       <p className="muted">
         {total} produto(s). Página {page} de {totalPages}.
+      </p>
+
+      <CollectMediaButton />
+      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "-0.5rem" }}>
+        Baixa as fotos das URLs do Mercado Livre para o servidor (aparecem aqui e entram nos criativos).
       </p>
 
       <div className="table-wrap">
