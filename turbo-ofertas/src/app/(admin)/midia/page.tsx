@@ -69,7 +69,7 @@ export default async function MidiaPage({
           <tbody>
             {products.map((p) => {
               const thumb = p.customImage || p.imageLocal || null;
-              const hasVideo = !!(p.videoLocal || p.videoUrl);
+              const videoSrc = p.videoLocal || p.videoUrl || null;
               return (
                 <tr key={p.id}>
                   <td style={{ fontSize: "0.8rem" }}>{p.id}</td>
@@ -104,7 +104,19 @@ export default async function MidiaPage({
                       </span>
                     )}
                   </td>
-                  <td>{hasVideo ? "sim" : "não"}</td>
+                  <td>
+                    {videoSrc ? (
+                      <video
+                        controls
+                        muted
+                        preload="metadata"
+                        src={videoSrc}
+                        style={{ width: 110, height: 62, objectFit: "cover", borderRadius: 6, background: "#000" }}
+                      />
+                    ) : (
+                      <span className="muted">não</span>
+                    )}
+                  </td>
                   <td>
                     <span className={`badge ${p.source}`}>{p.source}</span>
                     <div className="muted" style={{ fontSize: "0.72rem" }}>
