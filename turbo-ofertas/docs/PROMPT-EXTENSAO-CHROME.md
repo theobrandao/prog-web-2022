@@ -55,6 +55,22 @@ para a minha planilha de importação "Turbo Ofertas", seguindo EXATAMENTE as re
 - url_imagem e url_produto são OBRIGATÓRIAS. Se não conseguir a imagem direta, me avise.
 - Preços em formato brasileiro (vírgula decimal). Remova "R$" e pontos de milhar.
 
+=== CAPTURA DE VÍDEO (IMPORTANTE — ler com atenção) ===
+O vídeo do produto no Mercado Livre fica na GALERIA de mídia (as miniaturas à
+esquerda/embaixo da foto principal). Faça assim para NÃO perder vídeos:
+1. Procure na galeria uma miniatura com ícone de PLAY (▶) — é o vídeo do anúncio.
+2. Clique/passe o mouse nessa miniatura para o player carregar.
+3. Pegue a URL DIRETA do vídeo:
+   - do atributo src do elemento <video> ou <source> que aparecer, OU
+   - de uma URL terminando em .mp4 (normalmente em mlstatic.com / mms.mlstatic.com /
+     video-static-clips), OU
+   - se for streaming, uma URL terminando em .m3u8.
+4. Se houver mais de uma qualidade, prefira a de MAIOR resolução.
+5. Só deixe url_video VAZIO se o anúncio REALMENTE não tiver vídeo na galeria.
+6. NUNCA coloque no url_video: link de página, thumbnail (imagem), YouTube embed,
+   ou blob: — só .mp4 ou .m3u8 direto. Se só achar blob:, role a página/clique no
+   vídeo até aparecer a URL real .mp4.
+
 === BAIXAR MÍDIA (pra facilitar o agente de criativos) ===
 1. Baixe a imagem principal (maior resolução possível) e salve como PNG:  {id_item}.png
 2. Se houver vídeo .mp4/.m3u8 direto, baixe e salve como MP4:  {id_item}.mp4
