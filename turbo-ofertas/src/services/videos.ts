@@ -6,7 +6,8 @@ import os from "node:os";
 
 const execFileAsync = promisify(execFile);
 
-const VIDEOS_DIR = path.join(process.cwd(), "public", "vid", "products");
+import { mediaDir } from "../lib/env.js";
+const VIDEOS_DIR = () => path.join(mediaDir(), "videos");
 const DOWNLOAD_TIMEOUT_MS = 20_000;
 const FFMPEG_TIMEOUT_MS = 120_000;
 const MAX_BUFFER = 64 * 1024 * 1024;
@@ -76,8 +77,9 @@ export async function processProductVideo(
       input = tmpInput;
     }
 
-    await mkdir(VIDEOS_DIR, { recursive: true });
-    const outPath = path.join(VIDEOS_DIR, `${id}.mp4`);
+    const vdir = VIDEOS_DIR();
+    await mkdir(vdir, { recursive: true });
+    const outPath = path.join(vdir, `${id}.mp4`);
 
     // scale to fit within 1080x1920, then pad to exact 1080x1920 centered.
     const baseFilter =
@@ -135,7 +137,7 @@ export async function processProductVideo(
       }
     }
 
-    return { ok: true, videoLocal: `/vid/products/${id}.mp4` };
+    return { ok: true, videoLocal: `/vid/${id}.mp4` };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "falha desconhecida" };
   } finally {

@@ -24,3 +24,4 @@ public/img/creatives/*
 
 # prisma
 prisma/migrations/dev.db*
+.media/

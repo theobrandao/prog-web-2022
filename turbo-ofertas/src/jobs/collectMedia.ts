@@ -2,9 +2,10 @@ import type { PrismaClient } from "@prisma/client";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { downloadProductImage } from "../services/images.js";
+import { mediaDir } from "../lib/env.js";
 import type { JobLogger } from "../lib/log.js";
 
-const PRODUCTS_DIR = path.join(process.cwd(), "public", "img", "products");
+const PRODUCTS_DIR = () => path.join(mediaDir(), "products");
 
 /**
  * Coleta as imagens de todos os produtos que ainda não têm imagem local,
@@ -22,7 +23,7 @@ export async function collectMedia(
   for (const p of products) {
     if (!p.imageUrl) continue;
     // Já existe o arquivo local? só aponta.
-    const local = path.join(PRODUCTS_DIR, `${p.id}.jpg`);
+    const local = path.join(PRODUCTS_DIR(), `${p.id}.jpg`);
     if (existsSync(local)) {
       await prisma.product.update({ where: { id: p.id }, data: { imageLocal: `/img/products/${p.id}.jpg` } });
       ok++;

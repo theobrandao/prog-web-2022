@@ -1,10 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { mediaDir } from "../lib/env.js";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIDE = 1200;
 const TIMEOUT_MS = 15_000;
-const PRODUCTS_DIR = path.join(process.cwd(), "public", "img", "products");
+const PRODUCTS_DIR = () => path.join(mediaDir(), "products");
 
 export interface ImageResult {
   ok: boolean;
@@ -58,8 +59,9 @@ export async function downloadProductImage(
         .jpeg({ quality: 90 })
         .toBuffer();
 
-      await mkdir(PRODUCTS_DIR, { recursive: true });
-      await writeFile(path.join(PRODUCTS_DIR, `${id}.jpg`), output);
+      const dir = PRODUCTS_DIR();
+      await mkdir(dir, { recursive: true });
+      await writeFile(path.join(dir, `${id}.jpg`), output);
       return { ok: true, imageLocal: `/img/products/${id}.jpg` };
     } catch (e) {
       lastErr = (e as Error).message;

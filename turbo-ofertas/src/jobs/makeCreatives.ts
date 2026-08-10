@@ -9,7 +9,8 @@ import { formatBRL } from "../core/format.js";
 import { truncDay } from "../lib/dates.js";
 import type { JobLogger } from "../lib/log.js";
 
-const PRODUCTS_DIR = path.join(process.cwd(), "public", "img", "products");
+import { mediaDir } from "../lib/env.js";
+const PRODUCTS_DIR = () => path.join(mediaDir(), "products");
 
 /** Generate feed + story creatives for the given posts (or all of today's). */
 export async function makeCreatives(
@@ -31,7 +32,7 @@ export async function makeCreatives(
     if (p.customImage && existsSync(path.join(process.cwd(), "public", p.customImage.replace(/^\//, "")))) {
       imagePath = path.join(process.cwd(), "public", p.customImage.replace(/^\//, ""));
     } else {
-      const local = path.join(PRODUCTS_DIR, `${p.id}.jpg`);
+      const local = path.join(PRODUCTS_DIR(), `${p.id}.jpg`);
       if (!existsSync(local) && p.imageUrl) {
         const res = await downloadProductImage(p.id, p.imageUrl);
         if (res.ok) {

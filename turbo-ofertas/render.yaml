@@ -18,6 +18,8 @@ services:
         value: "1" # vídeo (ffmpeg) reativado — há RAM sobrando no Standard
       - key: DATABASE_URL
         value: file:/data/app.db
+      - key: MEDIA_DIR
+        value: /data/media # imagens/criativos/vídeos no disco persistente (não em public/, que é efêmero)
       - key: SESSION_SECRET
         generateValue: true
       - key: ADMIN_EMAIL

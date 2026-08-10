@@ -5,13 +5,14 @@ import sharp from "sharp";
 import Decimal from "decimal.js";
 import { colors, fonts, HANDLE, SELO, CTA_FEED, CTA_STORY } from "../theme.js";
 import { formatBRL } from "../core/format.js";
+import { mediaDir } from "../lib/env.js";
 
 // Baixa pegada de memória (512MB no Starter): sem cache de libvips e 1 thread.
 sharp.cache(false);
 sharp.concurrency(1);
 
 const FONT_DIR = path.join(process.cwd(), "assets", "fonts");
-const CREATIVES_DIR = path.join(process.cwd(), "public", "img", "creatives");
+const CREATIVES_DIR = () => path.join(mediaDir(), "creatives");
 
 /**
  * DESIGN PADRÃO — "canal de ofertas" (foto full-bleed + explosão de preço).
@@ -560,11 +561,12 @@ export async function makePostCreatives(
   input: CreativeInput,
 ): Promise<{ feedImage: string; storyImage: string }> {
   const { mkdir, writeFile } = await import("node:fs/promises");
-  await mkdir(CREATIVES_DIR, { recursive: true });
+  const dir = CREATIVES_DIR();
+  await mkdir(dir, { recursive: true });
   const feed = await renderFeed(input);
   const story = await renderStory(input);
-  await writeFile(path.join(CREATIVES_DIR, `${postId}-feed.png`), feed);
-  await writeFile(path.join(CREATIVES_DIR, `${postId}-story.png`), story);
+  await writeFile(path.join(dir, `${postId}-feed.png`), feed);
+  await writeFile(path.join(dir, `${postId}-story.png`), story);
   return {
     feedImage: `/img/creatives/${postId}-feed.png`,
     storyImage: `/img/creatives/${postId}-story.png`,
