@@ -13,12 +13,13 @@ export const dynamic = "force-dynamic";
  * Run today's selection now: selectDaily -> makeCreatives -> waPackage.
  * Idempotent — re-running the same day won't duplicate posts (§9).
  */
-export async function POST() {
+export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
+  const reset = new URL(req.url).searchParams.get("reset") === "1";
   const now = new Date();
-  const sel = await withJob(prisma, "selectDaily", now, (l) => selectDaily(prisma, { log: l }), { force: true });
+  const sel = await withJob(prisma, "selectDaily", now, (l) => selectDaily(prisma, { log: l, reset }), { force: true });
   const cre = await withJob(prisma, "makeCreatives", now, (l) => makeCreatives(prisma, { log: l }), { force: true });
   const wap = await withJob(prisma, "waPackage", now, (l) => waPackage(prisma, { log: l }), { force: true });
 

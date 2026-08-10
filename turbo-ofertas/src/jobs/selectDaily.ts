@@ -30,10 +30,22 @@ function linkFor(product: CoreProduct, channel: string): string {
  */
 export async function selectDaily(
   prisma: PrismaClient,
-  opts: { date?: Date; log?: JobLogger } = {},
+  opts: { date?: Date; log?: JobLogger; reset?: boolean } = {},
 ) {
   const day = truncDay(opts.date ?? new Date());
   const log = opts.log?.log ?? (() => {});
+
+  // Reset: limpa os posts do dia (e seus cliques) para re-selecionar do zero —
+  // útil após importar produtos novos, quando já havia posts do dia.
+  if (opts.reset) {
+    const todays = await prisma.post.findMany({ where: { date: day }, select: { id: true } });
+    const ids = todays.map((p) => p.id);
+    if (ids.length > 0) {
+      await prisma.clickEvent.deleteMany({ where: { postId: { in: ids } } });
+      await prisma.post.deleteMany({ where: { id: { in: ids } } });
+      log(`reset: ${ids.length} post(s) do dia removidos`);
+    }
+  }
 
   const existing = await prisma.post.count({ where: { date: day } });
   if (existing > 0) {
