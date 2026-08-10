@@ -12,6 +12,7 @@ interface RuleForm {
   highTicket: string;
   slotsPerDay: string;
   blocklist: string;
+  launchMode: boolean;
 }
 
 const DEFAULTS: RuleForm = {
@@ -24,6 +25,7 @@ const DEFAULTS: RuleForm = {
   highTicket: "300",
   slotsPerDay: "3",
   blocklist: "réplica,replica,similar,inspirado,estilo,genérico",
+  launchMode: true,
 };
 
 const FIELDS: { key: keyof RuleForm; label: string }[] = [
@@ -61,6 +63,7 @@ export default function RegrasPage() {
             highTicket: String(r.highTicket),
             slotsPerDay: String(r.slotsPerDay),
             blocklist: r.blocklist,
+            launchMode: !!r.launchMode,
           });
           setCounts({ approvedToday: data.approvedToday, rejectedToday: data.rejectedToday });
         }
@@ -88,6 +91,7 @@ export default function RegrasPage() {
       highTicket: Number(form.highTicket),
       slotsPerDay: Number(form.slotsPerDay),
       blocklist: form.blocklist,
+      launchMode: form.launchMode,
     };
     const res = await fetch("/api/admin/rules", {
       method: "PUT",
@@ -127,7 +131,7 @@ export default function RegrasPage() {
                 id={f.key}
                 type="number"
                 step="any"
-                value={form[f.key]}
+                value={String(form[f.key])}
                 onChange={(e) => update(f.key, e.target.value)}
               />
             </div>
@@ -141,6 +145,25 @@ export default function RegrasPage() {
           value={form.blocklist}
           onChange={(e) => update("blocklist", e.target.value)}
         />
+
+        <div className="card" style={{ marginTop: "1rem", background: "rgba(232,178,26,0.08)" }}>
+          <label htmlFor="launchMode" style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer" }}>
+            <input
+              id="launchMode"
+              type="checkbox"
+              checked={form.launchMode}
+              onChange={(e) => setForm((f) => ({ ...f, launchMode: e.target.checked }))}
+              style={{ width: 20, height: 20 }}
+            />
+            <strong>Modo Lançamento</strong>
+          </label>
+          <p className="muted" style={{ marginTop: "0.4rem", marginBottom: 0 }}>
+            Publica produtos <strong>sem exigir os 90 dias de histórico</strong> (ideal no começo).
+            O selo e o gancho <em>&quot;menor preço 90 dias&quot;</em> só aparecem quando o histórico
+            realmente comprova o fundo — então nada de promessa falsa. Desligue quando o histórico
+            amadurecer para voltar à regra rígida.
+          </p>
+        </div>
 
         {error && <p className="error">{error}</p>}
         {notice && <p className="notice">{notice}</p>}

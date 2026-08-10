@@ -113,6 +113,8 @@ export interface CreativeInput {
   coupon?: string | null;
   /** absolute path to a local product image, or null for the typographic fallback */
   imagePath?: string | null;
+  /** mostra o selo "MENOR PREÇO 90 DIAS" só quando o histórico certifica (default false) */
+  certifiedFloor?: boolean;
 }
 
 /** Foto processada para preencher EXATAMENTE w×h (cover), com recorte inteligente. */
@@ -421,7 +423,9 @@ export async function renderFeed(input: CreativeInput): Promise<Buffer> {
       bg,
       topGradient,
       el("div", { position: "absolute", top: L.logo.top, left: L.logo.left, display: "flex" }, logoBadge(logo, L.logo.box)),
-      el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(24)),
+      input.certifiedFloor
+        ? el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(24))
+        : null,
       el(
         "div",
         { position: "absolute", top: L.burst.top, right: L.burst.right, display: "flex" },
@@ -526,7 +530,9 @@ export async function renderStory(input: CreativeInput): Promise<Buffer> {
       bg,
       topGradient,
       el("div", { position: "absolute", top: L.logo.top, left: L.logo.left, display: "flex" }, logoBadge(logo, L.logo.box)),
-      el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(26)),
+      input.certifiedFloor
+        ? el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(26))
+        : null,
       el(
         "div",
         { position: "absolute", top: L.burst.top, right: L.burst.right, display: "flex" },

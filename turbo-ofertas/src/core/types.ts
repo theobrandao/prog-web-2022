@@ -51,6 +51,12 @@ export interface CoreRule {
   slotsPerDay: number;
   /** comma-separated terms */
   blocklist: string;
+  /**
+   * Modo Lançamento (§5.2): quando true, HISTORICO e FUNDO_90D deixam de BLOQUEAR
+   * a seleção (ainda são registrados no ledger para R6). O selo/gancho "menor preço
+   * 90 dias" só aparece quando o histórico é real (ver EvaluateResult.floorCertified).
+   */
+  launchMode: boolean;
 }
 
 /** Fixed check codes, in the exact order they run and appear in the UI (§5.2). */
@@ -81,6 +87,12 @@ export interface EvaluateResult {
   fails: CheckResult[];
   /** all checks in order, regardless of outcome */
   checks: CheckResult[];
+  /**
+   * true só quando o histórico é suficiente (>= MIN_HISTORY_DAYS) E o preço está
+   * no fundo dos 90 dias. Autoriza o selo/gancho "menor preço 90 dias". Em Modo
+   * Lançamento um produto pode ser selecionado com floorCertified=false.
+   */
+  floorCertified: boolean;
 }
 
 export interface Evaluated {

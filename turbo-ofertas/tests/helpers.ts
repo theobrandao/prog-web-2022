@@ -15,6 +15,7 @@ export const defaultRule: CoreRule = {
   highTicket: D(300),
   slotsPerDay: 3,
   blocklist: "réplica,replica,similar,inspirado,estilo,genérico",
+  launchMode: false,
 };
 
 export function rule(overrides: Partial<CoreRule> = {}): CoreRule {

@@ -17,6 +17,7 @@ type DbRule = {
   highTicket: unknown;
   slotsPerDay: number;
   blocklist: string;
+  launchMode: boolean;
 };
 
 function serializeRule(r: DbRule) {
@@ -31,6 +32,7 @@ function serializeRule(r: DbRule) {
     highTicket: String(r.highTicket),
     slotsPerDay: r.slotsPerDay,
     blocklist: r.blocklist,
+    launchMode: r.launchMode,
   };
 }
 
@@ -113,6 +115,8 @@ export async function PUT(req: Request) {
       slotsPerDay,
       blocklist:
         typeof body.blocklist === "string" ? body.blocklist : current.blocklist,
+      launchMode:
+        typeof body.launchMode === "boolean" ? body.launchMode : current.launchMode,
     },
   });
 

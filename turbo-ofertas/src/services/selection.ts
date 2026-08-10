@@ -27,6 +27,7 @@ export function toCoreRule(r: {
   highTicket: unknown;
   slotsPerDay: number;
   blocklist: string;
+  launchMode?: boolean;
 }): CoreRule {
   return {
     minCommissionR: new Decimal(String(r.minCommissionR)),
@@ -38,6 +39,7 @@ export function toCoreRule(r: {
     highTicket: new Decimal(String(r.highTicket)),
     slotsPerDay: r.slotsPerDay,
     blocklist: r.blocklist,
+    launchMode: r.launchMode ?? false,
   };
 }
 

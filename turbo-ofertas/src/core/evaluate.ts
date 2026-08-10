@@ -33,12 +33,11 @@ export function evaluate(
 
   // 1. HISTORICO
   const days = hist.length;
+  const histOk = days >= MIN_HISTORY_DAYS;
   push(
     "HISTORICO",
-    days >= MIN_HISTORY_DAYS,
-    days >= MIN_HISTORY_DAYS
-      ? undefined
-      : `EM_OBSERVACAO (${days}/${MIN_HISTORY_DAYS} dias)`,
+    histOk,
+    histOk ? undefined : `EM_OBSERVACAO (${days}/${MIN_HISTORY_DAYS} dias)`,
   );
 
   // 2. FUNDO_90D
@@ -138,7 +137,15 @@ export function evaluate(
   const fails = checks.filter((c) => !c.ok);
   const passes = checks.filter((c) => c.ok);
 
-  return { ok: fails.length === 0, passes, fails, checks };
+  // "Menor preço 90 dias" só é certificado com histórico real E preço no fundo.
+  const floorCertified = histOk && atFloor;
+
+  // Modo Lançamento: HISTORICO e FUNDO_90D deixam de bloquear (mas seguem no ledger).
+  const blockingFails = rule.launchMode
+    ? fails.filter((c) => c.code !== "HISTORICO" && c.code !== "FUNDO_90D")
+    : fails;
+
+  return { ok: blockingFails.length === 0, passes, fails, checks, floorCertified };
 }
 
 /** Convenience: build human-readable reasons[] from a result's failures. */

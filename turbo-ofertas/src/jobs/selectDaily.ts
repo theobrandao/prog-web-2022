@@ -62,10 +62,10 @@ export async function selectDaily(
 
     // Create first to get an id (rotation seed = postId, §5.6).
     const post = await prisma.post.create({
-      data: { productId: product.id, date: day, slot: slot.slot, hook: "", caption: "", waMessage: "", tgMessage: "" },
+      data: { productId: product.id, date: day, slot: slot.slot, hook: "", caption: "", waMessage: "", tgMessage: "", floorCertified: ev.result.floorCertified },
     });
 
-    const { hook, unitLine } = pickHook(product, ev.hist, post.id, rule);
+    const { hook, unitLine } = pickHook(product, ev.hist, post.id, rule, { certifiedFloor: ev.result.floorCertified });
     const waMessage = buildWaMessage(product, linkFor(product, "grp"), {
       postId: post.id, channel: "grp", hook, unitLine, publicBaseUrl: base, groupInviteUrl: invite,
     });

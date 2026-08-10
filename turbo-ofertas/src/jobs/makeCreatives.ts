@@ -64,6 +64,7 @@ export async function makeCreatives(
       anchorPrice: p.anchorPrice != null ? new Decimal(String(p.anchorPrice)) : null,
       coupon: p.coupon,
       imagePath,
+      certifiedFloor: post.floorCertified,
     });
     await prisma.post.update({ where: { id: post.id }, data: { feedImage, storyImage } });
     done++;

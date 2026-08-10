@@ -53,7 +53,11 @@ export function pickHook(
   hist: PricePoint[],
   seed: number,
   rule: CoreRule,
+  opts: { certifiedFloor?: boolean } = {},
 ): HookResult {
+  // Quando o histórico não certifica o fundo de 90 dias (ex.: Modo Lançamento),
+  // o gancho "menor preço 90 dias" é omitido para não afirmar algo não comprovado.
+  const certifiedFloor = opts.certifiedFloor !== false;
   const price = product.currentPrice;
 
   // Kit unit line is additive to the rotation hook; compute early so it can be
@@ -99,7 +103,9 @@ export function pickHook(
   }
 
   // 4/5. Rotation (kit uses a rotation hook + unitLine).
-  const rotation: string[] = [...BASE_ROTATION];
+  const rotation: string[] = BASE_ROTATION.filter(
+    (h) => certifiedFloor || !h.startsWith("MENOR PREÇO"),
+  );
   if (product.urgency && product.urgency.trim().length > 0) {
     rotation.push(URGENCY_TEMPLATE.replace("{urgency}", product.urgency.trim()));
   }

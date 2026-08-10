@@ -68,6 +68,7 @@ model Rule {
   highTicket       Decimal @default(300)
   slotsPerDay      Int     @default(3)
   blocklist        String  @default("réplica,replica,similar,inspirado,estilo,genérico")
+  launchMode       Boolean @default(true) // Modo Lançamento: publica sem 90d de histórico; selo "menor preço 90 dias" só quando certificado
 }
 
 model Post {
@@ -81,6 +82,7 @@ model Post {
   tgMessage   String
   feedImage   String?
   storyImage  String?
+  floorCertified Boolean @default(false) // autoriza o selo "menor preço 90 dias" neste post
   igFeedId    String?
   igStoryId   String?
   tgSent      Boolean  @default(false)
