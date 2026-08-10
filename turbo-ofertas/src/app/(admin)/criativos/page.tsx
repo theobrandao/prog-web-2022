@@ -54,17 +54,17 @@ export default async function CriativosPage({
                 {p.product.title}
               </h3>
 
-              {p.product.videoLocal && (
+              {(p.videoCreative || p.product.videoLocal) && (
                 <div style={{ marginTop: "0.5rem" }}>
-                  <span className="badge">🎬 vídeo</span>
+                  <span className="badge">🎬 vídeo-criativo</span>
                   <video
                     controls
-                    src={p.product.videoLocal}
+                    src={p.videoCreative || p.product.videoLocal || undefined}
                     style={{ width: "100%", borderRadius: 8, marginTop: 4 }}
                   />
                   <a
                     className="btn ghost small"
-                    href={p.product.videoLocal}
+                    href={p.videoCreative || p.product.videoLocal || "#"}
                     download
                     style={{ marginTop: 4, display: "inline-block" }}
                   >

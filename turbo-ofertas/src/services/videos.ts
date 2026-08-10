@@ -66,7 +66,7 @@ function escapeDrawText(s: string): string {
 export async function processProductVideo(
   id: string,
   videoUrl: string,
-  opts: { priceLabel?: string },
+  opts: { priceLabel?: string; overlayPath?: string },
 ): Promise<VideoResult> {
   let tmpInput: string | null = null;
   try {
@@ -99,6 +99,28 @@ export async function processProductVideo(
         "x=(w-text_w)/2:y=h-360"
       : "";
 
+    // Args com o overlay da marca (PNG 1080x1920) sobreposto ao vídeo normalizado.
+    function overlayArgs(): string[] {
+      return [
+        "-y",
+        "-i", input,
+        "-i", opts.overlayPath!,
+        "-filter_complex",
+        `[0:v]${baseFilter}[bg];[bg][1:v]overlay=0:0[v]`,
+        "-map", "[v]",
+        "-map", "0:a?",
+        "-t", "30",
+        "-c:v", "libx264",
+        "-crf", "28",
+        "-preset", "veryfast",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-movflags", "+faststart",
+        outPath,
+      ];
+    }
+
     function args(withText: boolean): string[] {
       return [
         "-y",
@@ -126,21 +148,28 @@ export async function processProductVideo(
       ];
     }
 
-    try {
-      await execFileAsync(bin, args(!!opts.priceLabel), {
-        timeout: FFMPEG_TIMEOUT_MS,
-        maxBuffer: MAX_BUFFER,
-      });
-    } catch (e) {
-      // drawtext (font) may be unavailable; retry without the text overlay but
-      // still produce the normalized video.
-      if (opts.priceLabel) {
-        await execFileAsync(bin, args(false), {
-          timeout: FFMPEG_TIMEOUT_MS,
-          maxBuffer: MAX_BUFFER,
-        });
-      } else {
-        throw e;
+    if (opts.overlayPath) {
+      try {
+        await execFileAsync(bin, overlayArgs(), { timeout: FFMPEG_TIMEOUT_MS, maxBuffer: MAX_BUFFER });
+      } catch {
+        // Falha no overlay → cai pro vídeo normalizado (com/sem drawtext).
+        await execFileAsync(bin, args(!!opts.priceLabel), { timeout: FFMPEG_TIMEOUT_MS, maxBuffer: MAX_BUFFER }).catch(
+          async () => {
+            await execFileAsync(bin, args(false), { timeout: FFMPEG_TIMEOUT_MS, maxBuffer: MAX_BUFFER });
+          },
+        );
+      }
+    } else {
+      try {
+        await execFileAsync(bin, args(!!opts.priceLabel), { timeout: FFMPEG_TIMEOUT_MS, maxBuffer: MAX_BUFFER });
+      } catch (e) {
+        // drawtext (font) may be unavailable; retry without the text overlay but
+        // still produce the normalized video.
+        if (opts.priceLabel) {
+          await execFileAsync(bin, args(false), { timeout: FFMPEG_TIMEOUT_MS, maxBuffer: MAX_BUFFER });
+        } else {
+          throw e;
+        }
       }
     }
 

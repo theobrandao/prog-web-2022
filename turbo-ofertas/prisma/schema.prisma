@@ -82,6 +82,7 @@ model Post {
   tgMessage   String
   feedImage   String?
   storyImage  String?
+  videoCreative String? // /vid/{postId}.mp4 — vídeo do produto com a marca sobreposta
   floorCertified Boolean @default(false) // autoriza o selo "menor preço 90 dias" neste post
   igFeedId    String?
   igStoryId   String?

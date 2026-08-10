@@ -1,8 +1,10 @@
 import path from "node:path";
+import os from "node:os";
 import { existsSync } from "node:fs";
+import { writeFile, unlink } from "node:fs/promises";
 import type { PrismaClient } from "@prisma/client";
 import Decimal from "decimal.js";
-import { makePostCreatives } from "../services/creatives.js";
+import { makePostCreatives, renderStoryOverlay } from "../services/creatives.js";
 import { downloadProductImage } from "../services/images.js";
 import { processProductVideo } from "../services/videos.js";
 import { formatBRL } from "../core/format.js";
@@ -45,31 +47,42 @@ export async function makeCreatives(
       if (existsSync(local)) imagePath = local;
     }
 
-    // §7.5 — normalização de vídeo (ffmpeg) é pesada de memória. Fica DESLIGADA
-    // por padrão para não estourar a RAM (512MB no Starter). Habilite com
-    // ENABLE_VIDEO=1 num plano com mais memória.
-    if (process.env.ENABLE_VIDEO === "1" && p.videoUrl && !p.videoLocal) {
-      const currentPrice = new Decimal(String(p.currentPrice));
-      const res = await processProductVideo(p.id, p.videoUrl, {
-        priceLabel: `R$ ${formatBRL(currentPrice)}`,
-      });
-      if (res.ok) {
-        await prisma.product.update({ where: { id: p.id }, data: { videoLocal: res.videoLocal } });
-        log(`  vídeo normalizado: ${p.id}`);
-      } else {
-        log(`  sem vídeo local (${p.id}): ${res.error} — somente imagem`);
-      }
-    }
-
-    const { feedImage, storyImage } = await makePostCreatives(post.id, {
+    const input = {
       title: p.title,
       currentPrice: new Decimal(String(p.currentPrice)),
       anchorPrice: p.anchorPrice != null ? new Decimal(String(p.anchorPrice)) : null,
       coupon: p.coupon,
       imagePath,
       certifiedFloor: post.floorCertified,
-    });
+    };
+
+    // Criativos estáticos (feed + story).
+    const { feedImage, storyImage } = await makePostCreatives(post.id, input);
     await prisma.post.update({ where: { id: post.id }, data: { feedImage, storyImage } });
+
+    // §7.5 — CRIATIVO EM VÍDEO: sobrepõe a identidade (marca + preço) ao vídeo do
+    // produto. Pesado de memória/CPU → só com ENABLE_VIDEO=1 (plano >=2GB).
+    if (process.env.ENABLE_VIDEO === "1" && p.videoUrl) {
+      try {
+        const overlayBuf = await renderStoryOverlay(input);
+        const overlayPath = path.join(os.tmpdir(), `overlay-${post.id}.png`);
+        await writeFile(overlayPath, overlayBuf);
+        const res = await processProductVideo(String(post.id), p.videoUrl, {
+          overlayPath,
+          priceLabel: `R$ ${formatBRL(input.currentPrice)}`,
+        });
+        await unlink(overlayPath).catch(() => {});
+        if (res.ok) {
+          await prisma.post.update({ where: { id: post.id }, data: { videoCreative: res.videoLocal } });
+          log(`  vídeo-criativo: post ${post.id}`);
+        } else {
+          log(`  vídeo falhou (post ${post.id}): ${res.error}`);
+        }
+      } catch (e) {
+        log(`  vídeo erro (post ${post.id}): ${(e as Error).message}`);
+      }
+    }
+
     done++;
     log(`  criativos gerados: post ${post.id} (${p.id})`);
   }

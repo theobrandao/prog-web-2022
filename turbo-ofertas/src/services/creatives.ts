@@ -555,6 +555,90 @@ export async function renderStory(input: CreativeInput): Promise<Buffer> {
   return sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 }
 
+/**
+ * Overlay transparente 1080×1920 com a identidade (logo, selo, explosão de preço,
+ * gradiente + título, CTA) para ser SOBREPOSTO ao vídeo do produto. Sem foto/fundo:
+ * o vídeo aparece por trás. Retorna PNG com transparência.
+ */
+export async function renderStoryOverlay(input: CreativeInput): Promise<Buffer> {
+  const L = LAYOUT.story;
+  const fontsData = await loadFonts();
+  const logo = await loadLogo();
+
+  const topGradient = el("div", {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: L.width,
+    height: 300,
+    display: "flex",
+    backgroundImage: "linear-gradient(to bottom, rgba(8,10,12,0.65), rgba(8,10,12,0))",
+  });
+
+  const overlay = el(
+    "div",
+    {
+      position: "absolute",
+      top: L.overlay.top,
+      left: 0,
+      width: L.width,
+      height: L.overlay.height,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-start",
+      padding: "56px 56px 0 56px",
+      backgroundImage:
+        "linear-gradient(to top, rgba(8,10,12,0.97) 0%, rgba(8,10,12,0.9) 60%, rgba(8,10,12,0) 100%)",
+    },
+    [
+      subline(input),
+      el(
+        "div",
+        {
+          fontFamily: fonts.display,
+          fontSize: L.titleSize,
+          color: colors.paper,
+          display: "flex",
+          lineHeight: 1.12,
+          maxWidth: L.titleMaxWidth,
+          maxHeight: L.titleSize * 2.4,
+          overflow: "hidden",
+          marginTop: 16,
+        },
+        input.title,
+      ),
+    ],
+  );
+
+  const stickerHint = el(
+    "div",
+    { position: "absolute", top: L.stickerHint.top, left: 0, width: L.width, display: "flex", justifyContent: "center" },
+    ctaPill(CTA_STORY, "up"),
+  );
+
+  const root = el(
+    "div",
+    { width: L.width, height: L.height, display: "flex", position: "relative" }, // sem backgroundColor -> transparente
+    [
+      topGradient,
+      el("div", { position: "absolute", top: L.logo.top, left: L.logo.left, display: "flex" }, logoBadge(logo, L.logo.box)),
+      input.certifiedFloor
+        ? el("div", { position: "absolute", top: L.selo.top, right: L.selo.right, display: "flex" }, seloPill(26))
+        : null,
+      el(
+        "div",
+        { position: "absolute", top: L.burst.top, right: L.burst.right, display: "flex" },
+        priceBurst(input, L.burst.size, L.burst.rot),
+      ),
+      overlay,
+      stickerHint,
+    ].filter(Boolean),
+  );
+
+  const svg = await satori(root as unknown as React.ReactNode, { width: L.width, height: L.height, fonts: fontsData });
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
 /** Render + persist both creatives for a post; returns their public paths. */
 export async function makePostCreatives(
   postId: number,
