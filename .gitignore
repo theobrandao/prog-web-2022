@@ -1,0 +1,24 @@
+# Ruflo local secrets and runtime data
+.env
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+
+# Ruflo plugin dependencies (regenerable via installed.json/package.json)
+node_modules/
+.claude-flow/plugins/node_modules/
+
+# Ruflo runtime databases and daemon state
+ruvector.db
+ruvector.db-*
+.swarm/
+.claude-flow/daemon-state.json
+.claude-flow/metrics/
+
+# Regenerable npm lockfile (plugins reproduced from package.json + installed.json)
+.claude-flow/plugins/package-lock.json
+
+# Ruflo daemon runtime pid
+.claude-flow/daemon.pid
